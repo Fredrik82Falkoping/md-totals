@@ -1,32 +1,44 @@
-<?php 
-// app/Console/Commands/ImportMarkdownsCsv.php
+<?php
 
 namespace App\Console\Commands;
+
+use App\Models\Markdown;
+use App\Models\Tenant;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
-use App\Models\Markdown;
 use Illuminate\Support\Str;
 
 class ImportMarkdownsCsv extends Command
 {
     protected $signature = 'md:import-csv {path}';
-    protected $description = 'Imports CSV export from the MD Totals C++ application';
+    protected $description = 'Imports CSV export from the MD Totals C++ application. Tenant is derived from the filename.';
 
     public function handle(): void
     {
         $path = $this->argument('path');
-        $filename = basename($path);
+        $filename = pathinfo($path, PATHINFO_FILENAME);
         $tenantName = Str::before($filename, '_Markdowns');
+
+        Log::info($filename);
+        Log::info($tenantName);
+
+        $tenant = Tenant::firstOrCreate(
+            ['store_code' => $tenantName],
+            ['name' => $tenantName]
+        );
+
         $handle = fopen($path, 'r');
         $headers = fgetcsv($handle, separator: ';');
         $headers[0] = preg_replace('/^\xEF\xBB\xBF/', '', $headers[0]);
 
-        while (($row = fgetcsv($handle, separator: ';')) !== false) {
-            $data = array_combine($headers, $row);
+        $rows = [];
+        $now = now();
 
-            Log::info($data);
+        while (($data = fgetcsv($handle, separator: ';')) !== false) {
+            $data = array_combine($headers, $data);
 
-            Markdown::insertOrIgnore([
+            $rows[] = [
+                'tenant_id' => $tenant->id,
                 'product_id' => ltrim($data['ProductID'], "'"),
                 'name' => $data['Name'] ?: null,
                 'k_id' => $data['K-ID'] ?: null,
@@ -43,12 +55,23 @@ class ImportMarkdownsCsv extends Command
                 'purchase_price' => $this->parseDecimal($data['Inpris (Förp) [Kr]']),
                 'margin_amount' => $this->parseDecimal($data['Marginal [Kr]']),
                 'margin_percent' => $this->parseDecimal($data['Marginal [%]']),
-                'tenant_id' => $tenantName ?: null
-            ]); 
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
         }
 
         fclose($handle);
-        $this->info('Import complete.');
+
+        $totalRows = count($rows);
+        $insertedCount = 0;
+
+        foreach (array_chunk($rows, 500) as $chunk) {
+            $insertedCount += Markdown::insertOrIgnore($chunk);
+        }
+
+        $skipped = $totalRows - $insertedCount;
+
+        $this->info("Import complete for tenant \"{$tenant->name}\": {$insertedCount} inserted, {$skipped} skipped as duplicates.");
     }
 
     private function parseDecimal(?string $value): ?float

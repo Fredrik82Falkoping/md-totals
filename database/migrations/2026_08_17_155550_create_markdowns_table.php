@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('markdowns', function (Blueprint $table) {
+        Schema::insertOrIgnore('markdowns', function (Blueprint $table) {
             $table->id();
             $table->string('product_id');              // stored as string due to leading apostrophe / long number in source
             $table->string('name')->nullable();
@@ -29,10 +29,10 @@ return new class extends Migration
             $table->decimal('purchase_price', 10, 2)->nullable();
             $table->decimal('margin_amount', 10, 2)->nullable();
             $table->decimal('margin_percent', 5, 2)->nullable();
-            $table->string('tenant_id')->nullable();     // added once tenant structure is finalized
+            $table->foreignId('tenant_id')->nullable()->constrained('tenants');   // added once tenant structure is finalized
             $table->timestamps();
 
-            $table->unique(['product_id', 'scanned_at']);
+            $table->unique(['product_id', 'scanned_at', 'tenant_id'], 'unique_product_scanned_tenant');
         });
     }
 

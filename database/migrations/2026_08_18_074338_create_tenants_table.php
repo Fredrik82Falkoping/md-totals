@@ -11,8 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('markdowns', function (Blueprint $table) {
-            $table->unique(['product_id', 'scanned_at', 'tenent_id']);
+        Schema::create('tenants', function (Blueprint $table) {
+            $table->id();
+            $table->string('name')->nullable();
+            $table->string('store_code')->unique();
+            $table->timestamps();
         });
     }
 
@@ -21,8 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('markdowns', function (Blueprint $table) {
-            //
-        });
+        Schema::dropIfExists('tenants');
     }
 };

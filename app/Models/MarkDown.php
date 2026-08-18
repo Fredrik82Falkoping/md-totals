@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
+
 
 // app/Models/Markdown.php
 class Markdown extends Model
@@ -21,4 +23,19 @@ class Markdown extends Model
         'discount_amount' => 'decimal:2',
         'discount_percent' => 'decimal:2',
     ];
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope('tenant', function (Builder $builder) {
+            if (session()->has('tenant_id')) {
+                $builder->where('tenant_id', session('tenant_id'));
+            }
+        });
+    }
+
+    public function tenant()
+    {
+        return $this->belongsTo(Tenant::class);
+    }
+
 }

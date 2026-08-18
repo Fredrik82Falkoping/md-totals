@@ -1,19 +1,7 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>MD Totals — Statistics</title>
-    <style>
-        body { font-family: sans-serif; margin: 2rem; }
-        .summary { display: flex; gap: 2rem; margin-bottom: 2rem; }
-        .summary div { background: #f4f4f4; padding: 1rem 1.5rem; border-radius: 8px; }
-        .summary strong { display: block; font-size: 1.5rem; }
-        table { border-collapse: collapse; width: 100%; }
-        th, td { border: 1px solid #ddd; padding: 0.5rem; text-align: left; font-size: 0.9rem; }
-        th { background: #f0f0f0; }
-    </style>
-</head>
-<body>
+@extends('layouts.app')
+
+@section('content')
+
     <h1>MD Totals — {{ $tenant_name }}</h1>
 
     <div class="summary">
@@ -31,17 +19,66 @@
         </div>
     </div>
 
+    <form method="GET" action="{{ route('statistics.index') }}" id="filterForm" class="filters">
+        
+        <div class="filter-group">
+            <label for="category">Category</label>
+            <select name="category" id="category">
+                <option value="">All categories</option>
+                @foreach ($categories as $category)
+                    <option value="{{ $category }}" @selected($currentCategory === $category)>
+                        {{ $category }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+    
+        <div class="filter-group">
+            <label for="week">Week</label>
+            <select name="week" id="week">
+                <option value="">All weeks</option>
+                @foreach ($weeks as $week)
+                    <option value="{{ $week }}" @selected($currentWeek === $week)>
+                        {{ $week }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+
+        <input type="hidden" name="sort" value="{{ $currentSort }}">
+        <input type="hidden" name="direction" value="{{ $currentDirection }}">
+    </form>
+
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+
     <h2>Latest markdowns</h2>
     <table>
         <thead>
             <tr>
-                <th>Product ID</th>
-                <th>Category</th>
-                <th>Scanned at</th>
-                <th>Regular price</th>
-                <th>Reduced price</th>
-                <th>Discount</th>
-                <th>Discount %</th>
+                @php
+                    $columns = [
+                        'product_id' => 'Product ID',
+                        'category' => 'Category',
+                        'scanned_at' => 'Scanned at',
+                        'regular_price' => 'Regular price',
+                        'reduced_price' => 'Reduced price',
+                        'discount_amount' => 'Discount',
+                        'discount_percent' => 'Discount %',
+                    ];
+                @endphp
+                @foreach ($columns as $key => $label)
+                    @php
+                        $nextDirection = ($currentSort === $key && $currentDirection === 'asc') ? 'desc' : 'asc';
+                    @endphp
+                    <th>
+                        <a href="{{ route('statistics.index', array_merge(request()->query(), ['sort' => $key, 'direction' => $nextDirection])) }}"
+                           class="sort-link {{ $currentSort === $key ? 'active-' . $currentDirection : '' }}">
+                            {{ $label }}
+                        </a>
+                    </th>
+                @endforeach
             </tr>
         </thead>
         <tbody>
@@ -60,5 +97,4 @@
             @endforelse
         </tbody>
     </table>
-</body>
-</html>
+@endsection

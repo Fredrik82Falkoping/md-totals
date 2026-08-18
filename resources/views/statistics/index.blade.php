@@ -23,10 +23,10 @@
         
         <div class="filter-group">
             <label for="category">Kategori</label>
-            <select name="category" id="category">
+            <select name="category[]" id="category" multiple>
                 <option value="">Alla kategorier</option>
                 @foreach ($categories as $category)
-                    <option value="{{ $category }}" @selected($currentCategory === $category)>
+                    <option value="{{ $category }}" @selected(in_array($category, request()->input('category', [])))>
                         {{ $category }}
                     </option>
                 @endforeach
@@ -35,10 +35,10 @@
     
         <div class="filter-group">
             <label for="week">Veckor</label>
-            <select name="week" id="week">
+            <select name="week[]" id="week" multiple>
                 <option value="">Alla veckor</option>
                 @foreach ($weeks as $week)
-                    <option value="{{ $week }}" @selected($currentWeek === $week)>
+                    <option value="{{ $week }}" @selected(in_array($week, request()->input('week', [])))>
                         {{ $week }}
                     </option>
                 @endforeach
@@ -47,10 +47,10 @@
 
         <div class="filter-group">
             <label for="month">Månader</label>
-            <select name="month" id="month">
+            <select name="month[]" id="month" multiple>
                 <option value="">Alla månader</option>
                 @foreach ($months as $month)
-                    <option value="{{ $month }}" @selected($currentWeek === $month)>
+                    <option value="{{ $month }}" @selected(in_array($month, request()->input('month', [])))>
                         {{ $month }}
                     </option>
                 @endforeach
@@ -59,15 +59,17 @@
 
         <div class="filter-group">
             <label for="year">År</label>
-            <select name="year" id="year">
+            <select name="year[]" id="year" multiple>
                 <option value="">Alla år</option>
                 @foreach ($years as $year)
-                    <option value="{{ $year }}" @selected($currentWeek === $year)>
+                    <option value="{{ $year }}"  @selected(in_array($year, request()->input('year', [])))>
                         {{ $year }}
                     </option>
                 @endforeach
             </select>
         </div>
+
+        <button type="submit" class="filter-button">Filtrera</button>
 
         <input type="hidden" name="sort" value="{{ $currentSort }}">
         <input type="hidden" name="direction" value="{{ $currentDirection }}">
@@ -82,14 +84,15 @@
         <thead>
             <tr>
                 @php
+                    // Dina nya önskade kolumner
                     $columns = [
                         'product_name' => 'Produktnamn',
-                        'category' => 'Kategori',
-                        'scanned_at' => 'Scannad',
-                        'regular_price' => 'Ord. pris',
-                        'reduced_price' => 'Nedsatt pris',
-                        'discount_amount' => 'Rabatt',
-                        'discount_percent' => 'Rabatt %',
+                        'quantity' => 'Antal',
+                        'purchase_price' => 'Total kronor inköp',
+                        'reduced_price' => 'Total kronor nedsatt',
+                        'margin_amount' => 'Total förtjänst',
+                        'discount_percent' => 'Nedsatt i %',
+                        'margin_percent' => 'Medelmarginal i %',
                     ];
                 @endphp
                 @foreach ($columns as $key => $label)
@@ -98,8 +101,11 @@
                     @endphp
                     <th>
                         <a href="{{ route('statistics.index', array_merge(request()->query(), ['sort' => $key, 'direction' => $nextDirection])) }}"
-                           class="sort-link {{ $currentSort === $key ? 'active-' . $currentDirection : '' }}">
+                        class="sort-link {{ $currentSort === $key ? 'active-' . $currentDirection : '' }}">
                             {{ $label }}
+                            @if ($currentSort === $key)
+                                {!! $currentDirection === 'asc' ? '&#8593;' : '&#8595;' !!}
+                            @endif
                         </a>
                     </th>
                 @endforeach
@@ -108,17 +114,33 @@
         <tbody>
             @forelse ($markdowns as $markdown)
                 <tr>
-                    <td>{{ $markdown->name ?? $markdown->product_id }}</td>
-                    <td>{{ $markdown->category ?? '—' }}</td>
-                    <td>{{ $markdown->scanned_at }}</td>
-                    <td>{{ number_format($markdown->regular_price, 2) }} kr</td>
-                    <td>{{ number_format($markdown->reduced_price, 2) }} kr</td>
-                    <td>{{ number_format($markdown->discount_amount, 2) }} kr</td>
-                    <td>{{ number_format($markdown->discount_percent, 1) }}%</td>
+                    <!-- Produktnamn (eller ID om namn saknas) -->
+                    <td>{{ $markdown->product_name ?? $markdown->product_id }}</td>
+                    
+                    <!-- Antal (Visar stycken. Om din app använder vikt, kan du lägga till logik för weight_kg här) -->
+                    <td>{{ number_format($markdown->total_quantity, 0, ',', ' ') }} st</td>
+                    
+                    <!-- Total kronor inköp -->
+                    <td>{{ number_format($markdown->total_purchase_price, 2, ',', ' ') }} kr</td>
+                    
+                    <!-- Total kronor nedsatt -->
+                    <td>{{ number_format($markdown->total_reduced_price, 2, ',', ' ') }} kr</td>
+                    
+                    <!-- Total förtjänst (marginal i kronor) -->
+                    <td>{{ number_format($markdown->total_margin_amount, 2, ',', ' ') }} kr</td>
+                    
+                    <!-- Nedsatt i % (Genomsnittlig rabatt) -->
+                    <td>{{ number_format($markdown->avg_discount_percent, 1, ',', ' ') }}%</td>
+                    
+                    <!-- Medelmarginal i % -->
+                    <td>{{ number_format($markdown->avg_margin_percent, 1, ',', ' ') }}%</td>
                 </tr>
             @empty
-                <tr><td colspan="7">Ingen data hittades.</td></tr>
+                <tr>
+                    <td colspan="7" style="text-align: center;">Inga produkter matchade sökningen.</td>
+                </tr>
             @endforelse
         </tbody>
     </table>
+
 @endsection

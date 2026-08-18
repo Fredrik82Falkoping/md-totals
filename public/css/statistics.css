@@ -47,6 +47,21 @@ th { background: #f0f0f0; }
     flex-direction: column;
 }
 
+.filter-group {
+    margin: 20px;
+    font-family: sans-serif;
+    max-width: 400px;
+}
+.filter-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+/* Säkerställer att Select2-boxen tar upp hela bredden av sin container */
+.select2-container {
+    width: 100% !important;
+}
+
 .loading-overlay {
     display: none;
     position: fixed;

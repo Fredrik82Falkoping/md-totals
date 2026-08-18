@@ -25,27 +25,73 @@ class MarkdownController extends Controller
         $tenant = Tenant::find($tenantId);
         $query = Markdown::query();
 
+        // Handle categories (Multiselect med whereIn)
         if ($request->filled('category')) {
-            $query->where('category', $request->input('category'));
+            // Säkerställ att det hanteras som en array oavsett om det är ett eller flera val
+            $query->whereIn('category', (array) $request->input('category'));
         }
 
+        // Filter date intervals
+        $allDateRanges = [];
+
         if ($request->filled('week')) {
-            [$start, $end] = $this->weekToDateRange($request->input('week'));
-            $query->whereBetween('scanned_at', [$start, $end]);
+            $allDateRanges = array_merge($allDateRanges, $this->getMultipleFilterRanges($request->input('week')));
         }
 
         if ($request->filled('month')) {
-            [$start, $end] = $this->monthToDateRange($request->input('month'));
-            $query->whereBetween('scanned_at', [$start, $end]);
+            $allDateRanges = array_merge($allDateRanges, $this->getMultipleFilterRanges($request->input('month')));
         }
 
         if ($request->filled('year')) {
-            [$start, $end] = $this->yearToDateRange($request->input('year'));
-            $query->whereBetween('scanned_at', [$start, $end]);
+            $allDateRanges = array_merge($allDateRanges, $this->getMultipleFilterRanges($request->input('year')));
         }
 
-        $sortColumn = $request->input('sort', 'scanned_at');
+        if (!empty($allDateRanges)) {
+            // Vi grupperar alla datumfrågor inuti en subquery för att inte krocka med kategorifiltret
+            $query->where(function ($subQuery) use ($allDateRanges) {
+                foreach ($allDateRanges as $index => $range) {
+                    [$start, $end] = $range;
+
+                    if ($index === 0) {
+                        $subQuery->whereBetween('scanned_at', [$start, $end]);
+                    } else {
+                        $subQuery->orWhereBetween('scanned_at', [$start, $end]);
+                    }
+                }
+            });
+        }
+
+        $query->selectRaw('
+            product_id,
+            MAX(name) as product_name, -- Hämtar namnet (MAX fungerar bra eftersom namnet är likadant per ID)
+            COUNT(*) as total_scans,    -- Hur många gånger produkten scannats totalt
+            SUM(quantity) as total_quantity,
+            SUM(purchase_price) as total_purchase_price,
+            SUM(reduced_price) as total_reduced_price,
+            SUM(margin_amount) as total_margin_amount,
+            AVG(discount_percent) as avg_discount_percent,
+            AVG(margin_percent) as avg_margin_percent
+        ')
+        ->groupBy('product_id');
+
+         $currentSort = $request->input('sort', 'product_name');
+    $currentDirection = $request->input('direction', 'asc');
+
+         $sortMapping = [
+            'product_name' => 'product_name',
+            'quantity' => 'total_quantity',
+            'purchase_price' => 'total_purchase_price',
+            'reduced_price' => 'total_reduced_price',
+            'margin_amount' => 'total_margin_amount',
+            'discount_percent' => 'avg_discount_percent',
+            'margin_percent' => 'avg_margin_percent',
+        ];
+
+        $sortColumn = $sortMapping[$currentSort] ?? 'product_name';
         $sortDirection = $request->input('direction', 'desc') === 'asc' ? 'asc' : 'desc';
+        $query->orderBy($sortColumn, $currentDirection);
+
+        $sortColumn = $request->input('sort', 'scanned_at');
 
         if (!in_array($sortColumn, $this->sortable, true)) {
             $sortColumn = 'scanned_at';
@@ -112,6 +158,45 @@ class MarkdownController extends Controller
         $end = (clone $start)->endOfYear();
 
         return [$start, $end];
+    }
+
+     /**
+     * Tar emot en array med blandade tidsfilter (t.ex. ["2023-W08", "2023-08", "2024"])
+     * och returnerar en array med start- och slutdatum för varje val.
+     *
+     * @param array|string|null $filters
+     * @return array
+     */
+    public function getMultipleFilterRanges(array|string|null $filters): array
+    {
+        if (empty($filters)) {
+            return [];
+        }
+
+        // Säkerställ att vi alltid jobbar med en array, även om det bara skickades en singelsträng
+        $filterArray = is_array($filters) ? $filters : [$filters];
+        $ranges = [];
+
+        foreach ($filterArray as $value) {
+            if (empty($value)) {
+                continue;
+            }
+
+            // Matcha vecka: t.ex. "2023-W08"
+            if (preg_match('/^\d{4}-W\d{1,2}$/', $value)) {
+                $ranges[] = $this->weekToDateRange($value);
+            }
+            // Matcha månad: t.ex. "2023-08"
+            elseif (preg_match('/^\d{4}-\d{2}$/', $value)) {
+                $ranges[] = $this->monthToDateRange($value);
+            }
+            // Matcha år: t.ex. "2024"
+            elseif (preg_match('/^\d{4}$/', $value)) {
+                $ranges[] = $this->yearToDateRange($value);
+            }
+        }
+
+        return $ranges;
     }
 
     private function availableWeeks(): array

@@ -10,7 +10,7 @@ use Carbon\Carbon;
 class MarkdownController extends Controller
 {
     private array $sortable = [
-        'product_id', 'category', 'scanned_at', 'regular_price',
+        'product_id', 'product_name', 'category', 'scanned_at', 'regular_price',
         'reduced_price', 'discount_amount', 'discount_percent',
     ];
 
@@ -34,6 +34,16 @@ class MarkdownController extends Controller
             $query->whereBetween('scanned_at', [$start, $end]);
         }
 
+        if ($request->filled('month')) {
+            [$start, $end] = $this->monthToDateRange($request->input('month'));
+            $query->whereBetween('scanned_at', [$start, $end]);
+        }
+
+        if ($request->filled('year')) {
+            [$start, $end] = $this->yearToDateRange($request->input('year'));
+            $query->whereBetween('scanned_at', [$start, $end]);
+        }
+
         $sortColumn = $request->input('sort', 'scanned_at');
         $sortDirection = $request->input('direction', 'desc') === 'asc' ? 'asc' : 'desc';
 
@@ -52,7 +62,9 @@ class MarkdownController extends Controller
         // $markdowns = $query->limit(100)->get();
 
         $categories = Markdown::whereNotNull('category')->distinct()->pluck('category');
-        $weeks = $this->availableWeeks();
+        $weeks = $this->availablePeriods('week');
+        $months = $this->availablePeriods('month');
+        $years = $this->availablePeriods('year');
 
         return view('statistics.index', [
             'tenant' => $tenant,
@@ -61,8 +73,12 @@ class MarkdownController extends Controller
             'markdowns' => $query->limit(100)->get(),
             'categories' => $categories,
             'weeks' => $weeks,
+            'months' => $months,
+            'years' => $years,
             'currentCategory' => $request->input('category'),
             'currentWeek' => $request->input('week'),
+            'currentMonth' => $request->input('month'),
+            'currentYear' => $request->input('year'),
             'currentSort' => $sortColumn,
             'currentDirection' => $sortDirection,
         ]);
@@ -73,8 +89,27 @@ class MarkdownController extends Controller
         // $isoWeek format: "2023-W08"
         [$year, $week] = sscanf($isoWeek, '%d-W%d');
 
-        $start = Carbon::now()->setISODate($year, $week)->startOfWeek();
+        $start = Carbon::create()->setISODate($year, $week)->startOfWeek();
         $end = (clone $start)->endOfWeek();
+
+        return [$start, $end];
+    }
+
+    private function monthToDateRange(string $month): array
+    {
+        // $month format: "2023-08"
+        [$year, $month] = sscanf($month, '%d-%d');
+
+        $start = Carbon::create($year, $month, 1)->startOfMonth();
+        $end = (clone $start)->endOfMonth();
+
+        return [$start, $end];
+    }
+
+    private function yearToDateRange(string $year): array
+    {
+        $start = Carbon::create((int) $year, 1, 1)->startOfYear();
+        $end = (clone $start)->endOfYear();
 
         return [$start, $end];
     }
@@ -84,6 +119,28 @@ class MarkdownController extends Controller
         return Markdown::query()
             ->pluck('scanned_at')
             ->map(fn ($date) => Carbon::parse($date)->isoFormat('GGGG-[W]WW'))
+            ->unique()
+            ->sort()
+            ->values()
+            ->toArray();
+    }
+
+    private function availablePeriods(string $period): array
+    {
+        return Markdown::query()
+            ->pluck('scanned_at')
+            ->map(function ($date) use ($period) {
+                $date = Carbon::parse($date);
+
+                return match ($period) {
+                    'week' => $date->isoFormat('GGGG-[W]WW'),
+                    'month' => $date->format('Y-m'),
+                    'year' => $date->format('Y'),
+                    default => throw new InvalidArgumentException(
+                        "Unknown period: {$period}"
+                    ),
+                };
+            })
             ->unique()
             ->sort()
             ->values()

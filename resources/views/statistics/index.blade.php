@@ -7,24 +7,24 @@
     <div class="summary">
         <div>
             <strong>{{ $summary['total_count'] }}</strong>
-            Total markdowns
+            Totalt antal nedsatta priser
         </div>
         <div>
             <strong>{{ number_format($summary['total_discount'], 2) }} kr</strong>
-            Total discount amount
+            Total nedsatt summa
         </div>
         <div>
             <strong>{{ number_format($summary['average_discount_percent'], 1) }}%</strong>
-            Average discount
+            Genomsnittlig rabatt
         </div>
     </div>
 
     <form method="GET" action="{{ route('statistics.index') }}" id="filterForm" class="filters">
         
         <div class="filter-group">
-            <label for="category">Category</label>
+            <label for="category">Kategori</label>
             <select name="category" id="category">
-                <option value="">All categories</option>
+                <option value="">Alla kategorier</option>
                 @foreach ($categories as $category)
                     <option value="{{ $category }}" @selected($currentCategory === $category)>
                         {{ $category }}
@@ -34,12 +34,36 @@
         </div>
     
         <div class="filter-group">
-            <label for="week">Week</label>
+            <label for="week">Veckor</label>
             <select name="week" id="week">
-                <option value="">All weeks</option>
+                <option value="">Alla veckor</option>
                 @foreach ($weeks as $week)
                     <option value="{{ $week }}" @selected($currentWeek === $week)>
                         {{ $week }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label for="month">Månader</label>
+            <select name="month" id="month">
+                <option value="">Alla månader</option>
+                @foreach ($months as $month)
+                    <option value="{{ $month }}" @selected($currentWeek === $month)>
+                        {{ $month }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label for="year">År</label>
+            <select name="year" id="year">
+                <option value="">Alla år</option>
+                @foreach ($years as $year)
+                    <option value="{{ $year }}" @selected($currentWeek === $year)>
+                        {{ $year }}
                     </option>
                 @endforeach
             </select>
@@ -53,19 +77,19 @@
         <div class="spinner"></div>
     </div>
 
-    <h2>Latest markdowns</h2>
+    <h2>Nedsatta priser</h2>
     <table>
         <thead>
             <tr>
                 @php
                     $columns = [
-                        'product_id' => 'Product ID',
-                        'category' => 'Category',
-                        'scanned_at' => 'Scanned at',
-                        'regular_price' => 'Regular price',
-                        'reduced_price' => 'Reduced price',
-                        'discount_amount' => 'Discount',
-                        'discount_percent' => 'Discount %',
+                        'product_name' => 'Produktnamn',
+                        'category' => 'Kategori',
+                        'scanned_at' => 'Scannad',
+                        'regular_price' => 'Ord. pris',
+                        'reduced_price' => 'Nedsatt pris',
+                        'discount_amount' => 'Rabatt',
+                        'discount_percent' => 'Rabatt %',
                     ];
                 @endphp
                 @foreach ($columns as $key => $label)
@@ -84,7 +108,7 @@
         <tbody>
             @forelse ($markdowns as $markdown)
                 <tr>
-                    <td>{{ $markdown->product_id }}</td>
+                    <td>{{ $markdown->name ?? $markdown->product_id }}</td>
                     <td>{{ $markdown->category ?? '—' }}</td>
                     <td>{{ $markdown->scanned_at }}</td>
                     <td>{{ number_format($markdown->regular_price, 2) }} kr</td>
@@ -93,7 +117,7 @@
                     <td>{{ number_format($markdown->discount_percent, 1) }}%</td>
                 </tr>
             @empty
-                <tr><td colspan="7">No data found.</td></tr>
+                <tr><td colspan="7">Ingen data hittades.</td></tr>
             @endforelse
         </tbody>
     </table>

@@ -1,5 +1,5 @@
 $(document).ready(function () {
-    $('#category,#week').on('change', function () {
+    $('#category,#week, #month, #year').on('change', function () {
         $('#loadingOverlay').addClass('active');
         $('#filterForm').submit();
     });

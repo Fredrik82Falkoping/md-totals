@@ -61,6 +61,7 @@ th { background: #f0f0f0; }
 .select2-container {
     width: 100% !important;
 }
+.select2-search__field {min-width: 3rem;}
 /** Loading overlay styles */
 .loading-overlay {
     display: none;

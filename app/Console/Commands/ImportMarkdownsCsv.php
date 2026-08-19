@@ -7,6 +7,7 @@ use App\Models\Tenant;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class ImportMarkdownsCsv extends Command
 {
@@ -27,15 +28,25 @@ class ImportMarkdownsCsv extends Command
             ['name' => $tenantName]
         );
 
+        $latestScannedAt = Markdown::where('tenant_id', $tenant->id)->max('scanned_at');
+        $latestScannedAt = $latestScannedAt ? Carbon::parse($latestScannedAt) : null;
+
         $handle = fopen($path, 'r');
         $headers = fgetcsv($handle, separator: ';');
         $headers[0] = preg_replace('/^\xEF\xBB\xBF/', '', $headers[0]);
 
         $rows = [];
+        $totalRows = 0;
         $now = now();
 
         while (($data = fgetcsv($handle, separator: ';')) !== false) {
+            $totalRows++;
             $data = array_combine($headers, $data);
+            $scannedAt = Carbon::parse($data['Date']);
+
+            if ($latestScannedAt && $scannedAt->lessThanOrEqualTo($latestScannedAt)) {
+                continue;
+            }
 
             $rows[] = [
                 'tenant_id' => $tenant->id,
@@ -43,9 +54,7 @@ class ImportMarkdownsCsv extends Command
                 'name' => $data['Name'] ?: null,
                 'k_id' => $data['K-ID'] ?: null,
                 'category' => $data['Kategori'] ?: null,
-                'scanned_at' => $data['Date'],
-                'month' => $data['Manad'] ?: null,
-                'week' => $data['Vecka'] ?: null,
+                'scanned_at' => $scannedAt,
                 'quantity' => $this->parseDecimal($data['St.']),
                 'weight_kg' => $this->parseDecimal($data['kg']),
                 'regular_price' => $this->parseDecimal($data['Ordinarie Pris [Kr]']),
@@ -62,16 +71,16 @@ class ImportMarkdownsCsv extends Command
 
         fclose($handle);
 
-        $totalRows = count($rows);
         $insertedCount = 0;
 
         foreach (array_chunk($rows, 500) as $chunk) {
-            $insertedCount += Markdown::insertOrIgnore($chunk);
+            Markdown::insert($chunk);
+            $insertedCount += count($chunk);
         }
 
         $skipped = $totalRows - $insertedCount;
 
-        $this->info("Import complete for tenant \"{$tenant->name}\": {$insertedCount} inserted, {$skipped} skipped as duplicates.");
+        $this->info("Import complete for tenant \"{$tenant->name}\": {$insertedCount} inserted, {$skipped} already exists.");
     }
 
     private function parseDecimal(?string $value): ?float

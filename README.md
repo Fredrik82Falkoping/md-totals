@@ -87,6 +87,14 @@ Se `app/Services/RabattDataService.php` för all logik kring hämtning,
 filtrering och (ev.) cache av extern data — hålls samlat på ett ställe med
 avsikt, så att API-anrop inte sprids ut i controllers/vyer.
 
+## Import from CSV-file
+
+The program has a command for importing markdowns from a csv-file. The file should be in the same format that is created by MD Totals Monitor executive program. Use this command to import a CSV file:
+
+```
+php artisan md:import-csv [full path to csv file]
+```
+
 ## Kontakt / ägarskap
 
 - Utvecklare: Fredrik Olsson

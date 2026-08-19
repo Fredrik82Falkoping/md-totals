@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Markdown;
 use App\Models\Tenant;
 use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\Builder;
 use Carbon\Carbon;
 
 class MarkdownController extends Controller
@@ -20,26 +21,12 @@ class MarkdownController extends Controller
         $tenant = Tenant::find($tenantId);
         $query = Markdown::query();
 
-        // Handle categories (Multiselect med whereIn)
-        if ($request->filled('category')) {
-            // Säkerställ att det hanteras som en array oavsett om det är ett eller flera val
-            $query->whereIn('category', (array) $request->input('category'));
-        }
+        $this->applyFilters($query, $request);
 
-        // Filter date intervals
-        $allDateRanges = [];
-
-        if ($request->filled('week')) {
-            $allDateRanges = array_merge($allDateRanges, $this->getMultipleFilterRanges($request->input('week')));
-        }
-
-        if ($request->filled('month')) {
-            $allDateRanges = array_merge($allDateRanges, $this->getMultipleFilterRanges($request->input('month')));
-        }
-
-        if ($request->filled('year')) {
-            $allDateRanges = array_merge($allDateRanges, $this->getMultipleFilterRanges($request->input('year')));
-        }
+        $discountPercents = Markdown::whereNotNull('discount_percent')
+            ->distinct()
+            ->orderBy('discount_percent')
+            ->pluck('discount_percent');
 
         if (!empty($allDateRanges)) {
             // Vi grupperar alla datumfrågor inuti en subquery för att inte krocka med kategorifiltret
@@ -55,6 +42,8 @@ class MarkdownController extends Controller
                 }
             });
         }
+
+        $baseQuery = clone $query; // Clone the base query for summary calculations
 
         $query->selectRaw('
             product_id,
@@ -90,12 +79,18 @@ class MarkdownController extends Controller
         $query->orderBy($sortMapping[$currentSort], $currentDirection);
 
         $summary = [
-            'total_count' => (clone $query)->count(),
-            'total_discount' => (clone $query)->sum('discount_amount'),
-            'average_discount_percent' => (clone $query)->avg('discount_percent'),
+            'total_count' => (clone $baseQuery)->sum('quantity'),
+            'total_discount' => (clone $baseQuery)->sum('discount_amount'),
+            'average_discount_percent' => (clone $baseQuery)->avg('discount_percent'),
+            'total_margin' => (clone $baseQuery)->sum('margin_amount'),
         ];
 
         // $markdowns = $query->limit(100)->get();
+
+        $discountPercents = Markdown::whereNotNull('discount_percent')
+            ->distinct()
+            ->orderBy('discount_percent')
+            ->pluck('discount_percent');
 
         $categories = Markdown::whereNotNull('category')->distinct()->pluck('category');
         $weeks = $this->availablePeriods('week');
@@ -115,6 +110,8 @@ class MarkdownController extends Controller
             'currentWeek' => $request->input('week'),
             'currentMonth' => $request->input('month'),
             'currentYear' => $request->input('year'),
+            'discountPercents' => $discountPercents,
+            'currentDiscountPercents' => $request->input('discount_percent', []),
             'currentSort' => $currentSort,
             'currentDirection' => $currentDirection,
         ]);
@@ -220,5 +217,78 @@ class MarkdownController extends Controller
             ->sort()
             ->values()
             ->toArray();
+    }
+
+    public function productDetail(Request $request, string $productId)
+    {
+        // Tenant-filtrering sker automatiskt via global scope på Markdown
+        $query = Markdown::where('product_id', $productId);
+        $this->applyFilters($query, $request);
+
+        $events = $query
+            ->orderByDesc('scanned_at')
+            ->get([
+                'product_id',
+                'name',
+                'scanned_at',
+                'regular_price',
+                'reduced_price',
+                'discount_amount',
+                'discount_percent',
+            ]);
+
+        if ($events->isEmpty()) {
+            return response()->json(['message' => 'No data found for this product.'], 404);
+        }
+
+        return response()->json([
+            'product_id' => $productId,
+            'name' => $events->first()->name,
+            'events' => $events->map(function ($event) {
+                return [
+                    'scanned_at' => $event->scanned_at->format('Y-m-d H:i'),
+                    'regular_price' => number_format($event->regular_price, 2),
+                    'reduced_price' => number_format($event->reduced_price, 2),
+                    'discount_amount' => number_format($event->discount_amount, 2),
+                    'discount_percent' => number_format($event->discount_percent, 1),
+                ];
+            }),
+        ]);
+    }
+
+    private function applyFilters(Builder $query, Request $request): void
+    {
+        if ($request->filled('category')) {
+            $query->whereIn('category', (array) $request->input('category'));
+        }
+
+        $allDateRanges = [];
+
+        foreach (['week', 'month', 'year'] as $period) {
+            if ($request->filled($period)) {
+                $allDateRanges = array_merge(
+                    $allDateRanges,
+                    $this->getMultipleFilterRanges($request->input($period))
+                );
+            }
+        }
+
+        if ($request->filled('discount_percent')) {
+            $query->whereIn('discount_percent', $request->input('discount_percent'));
+        }
+
+        if (!empty($allDateRanges)) {
+            $query->where(function ($subQuery) use ($allDateRanges) {
+                foreach ($allDateRanges as $index => $range) {
+                    [$start, $end] = $range;
+
+                    if ($index === 0) {
+                        $subQuery->whereBetween('scanned_at', [$start, $end]);
+                    } else {
+                        $subQuery->orWhereBetween('scanned_at', [$start, $end]);
+                    }
+                }
+            });
+        }
     }
 }

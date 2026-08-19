@@ -61,7 +61,7 @@ th { background: #f0f0f0; }
 .select2-container {
     width: 100% !important;
 }
-
+/** Loading overlay styles */
 .loading-overlay {
     display: none;
     position: fixed;
@@ -78,7 +78,7 @@ th { background: #f0f0f0; }
 .loading-overlay.active {
     display: flex;
 }
-
+/** Spinner styles */
 .spinner {
     width: 48px;
     height: 48px;
@@ -97,6 +97,7 @@ th { background: #f0f0f0; }
     color: #333;
 }
 
+/** Filter button styles */
 .filter-button {
     padding: 0.55rem 1.5rem;
     background: #4a90d9;
@@ -122,4 +123,76 @@ th { background: #f0f0f0; }
 .filter-button:focus {
     outline: none;
     box-shadow: 0 0 0 2px rgba(74, 144, 217, 0.3);
+}
+
+.product-row {
+    cursor: pointer;
+    transition: background 0.1s ease;
+}
+
+.product-row:hover {
+    background: #f0f6fc;
+}
+
+/** Modal styles */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 10000;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-overlay.active {
+    display: flex;
+}
+
+.modal-box {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem 2rem;
+    max-width: 700px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.modal-close {
+    position: absolute;
+    top: 1rem;
+    right: 1.2rem;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #666;
+    line-height: 1;
+}
+
+.modal-close:hover {
+    color: #000;
+}
+
+.modal-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+}
+
+.modal-table th, .modal-table td {
+    border: 1px solid #ddd;
+    padding: 0.5rem;
+    font-size: 0.9rem;
+    text-align: left;
+}
+
+.modal-table th {
+    background: #f0f0f0;
 }

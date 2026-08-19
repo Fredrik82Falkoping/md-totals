@@ -14,6 +14,10 @@
             Total nedsatt summa
         </div>
         <div>
+            <strong>{{ number_format($summary['total_margin'], 2) }} kr</strong>
+            Total marginal
+        </div>
+        <div>
             <strong>{{ number_format($summary['average_discount_percent'], 1) }}%</strong>
             Genomsnittlig rabatt
         </div>
@@ -69,6 +73,17 @@
             </select>
         </div>
 
+        <div class="filter-group">
+            <label for="discount_percent">Rabatt %</label>
+            <select name="discount_percent[]" id="discount_percent" multiple>
+                @foreach ($discountPercents as $percent)
+                    <option value="{{ $percent }}" @selected(in_array($percent, $currentDiscountPercents))>
+                        {{ number_format($percent, 0) }}%
+                    </option>
+                @endforeach
+            </select>
+        </div>
+
         <button type="submit" class="filter-button">Filtrera</button>
 
         <input type="hidden" name="sort" value="{{ $currentSort }}">
@@ -113,7 +128,7 @@
         </thead>
         <tbody>
             @forelse ($markdowns as $markdown)
-                <tr>
+                <tr class="product-row" data-product-id="{{ $markdown->product_id }}">
                     <!-- Produktnamn (eller ID om namn saknas) -->
                     <td>{{ $markdown->product_name ?? $markdown->product_id }}</td>
                     
@@ -142,5 +157,24 @@
             @endforelse
         </tbody>
     </table>
+
+    <div id="productModal" class="modal-overlay">
+        <div class="modal-box">
+            <button id="closeModal" class="modal-close">&times;</button>
+            <h2 id="modalTitle"></h2>
+            <table class="modal-table">
+                <thead>
+                    <tr>
+                        <th>Scanned at</th>
+                        <th>Regular price</th>
+                        <th>Reduced price</th>
+                        <th>Discount</th>
+                        <th>Discount %</th>
+                    </tr>
+                </thead>
+                <tbody id="modalTableBody"></tbody>
+            </table>
+        </div>
+    </div>
 
 @endsection

@@ -72,4 +72,35 @@ $(document).ready(function () {
             $('#productModal').removeClass('active');
         }
     });
+
+    /** Compare dateintervals */
+    function updatePeriodTypeVisibility() {
+        const selectedType = $('input[name="period_type"]:checked').val();
+        $('.period-select').hide();
+        $(`.period-select[data-type="${selectedType}"]`).show();
+    }
+
+    function syncHiddenFields() {
+        const selectedType = $('input[name="period_type"]:checked').val();
+        const valueA = $(`.period-a-input[data-type="${selectedType}"]`).val();
+        const valueB = $(`.period-b-input[data-type="${selectedType}"]`).val();
+
+        $('#period_a_hidden').val(valueA);
+        $('#period_b_hidden').val(valueB);
+    }
+
+    $('input[name="period_type"]').on('change', function () {
+        updatePeriodTypeVisibility();
+        syncHiddenFields();
+    });
+
+    $('.period-a-input, .period-b-input').on('change', syncHiddenFields);
+
+    $('#compareForm').on('submit', function () {
+        syncHiddenFields();
+    });
+
+    // Initial state vid sidladdning
+    updatePeriodTypeVisibility();
+    syncHiddenFields();
 });

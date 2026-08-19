@@ -7,6 +7,12 @@
 </head>
 <body>
     <div class="container">
+        @if (session()->has('tenant_id'))
+            <nav class="main-nav">
+                <a href="{{ route('statistics.index') }}">Statistik</a>
+                <a href="{{ route('statistics.compare') }}">Jämför perioder</a>
+            </nav>
+        @endif
         @yield('content')
     </div>
 

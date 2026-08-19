@@ -291,4 +291,134 @@ class MarkdownController extends Controller
             });
         }
     }
+
+    public function compare(Request $request)
+    {
+        $tenantId = $request->session()->get('tenant_id');
+
+        if (!$tenantId) {
+            return redirect()->route('tenants.select');
+        }
+
+        $tenant = Tenant::find($tenantId);
+
+        $periodType = $request->input('period_type', 'week');
+        if (!in_array($periodType, ['week', 'month', 'year'], true)) {
+            $periodType = 'week';
+        }
+
+        $periodAValue = $request->input('period_a');
+        $periodBValue = $request->input('period_b');
+        $categories = $request->input('category', []); // array, multiselect
+
+        $rangeA = $periodAValue ? $this->periodToDateRange($periodType, $periodAValue) : null;
+        $rangeB = $periodBValue ? $this->periodToDateRange($periodType, $periodBValue) : null;
+
+        $markdownsA = $rangeA ? $this->markdownsForRange($rangeA, $categories) : collect();
+        $markdownsB = $rangeB ? $this->markdownsForRange($rangeB, $categories) : collect();
+
+        $summaryA = $rangeA ? $this->summaryFromCollection($markdownsA) : null;
+        $summaryB = $rangeB ? $this->summaryFromCollection($markdownsB) : null;
+
+        return view('statistics.compare', [
+            'tenant' => $tenant,
+            'tenant_name' => $tenant->name,
+            'periodType' => $periodType,
+            'periodAValue' => $periodAValue,
+            'periodBValue' => $periodBValue,
+            'weeks' => $this->availablePeriods('week'),
+            'months' => $this->availablePeriods('month'),
+            'years' => $this->availablePeriods('year'),
+            'allCategories' => Markdown::whereNotNull('category')->distinct()->orderBy('category')->pluck('category'),
+            'currentCategories' => $categories,
+            'summaryA' => $summaryA,
+            'summaryB' => $summaryB,
+            'markdownsA' => $markdownsA,
+            'markdownsB' => $markdownsB,
+        ]);
+    }
+
+    private function markdownsForRange(array $range, array $categories = [])
+    {
+        $query = Markdown::whereBetween('scanned_at', [$range[0], $range[1]]);
+
+        if (!empty($categories)) {
+            $query->whereIn('category', $categories);
+        }
+
+        return $query->orderByDesc('scanned_at')->limit(200)->get();
+    }
+
+    private function summaryFromCollection($markdowns): array
+    {
+        return [
+            'total_count' => $markdowns->count(),
+            'total_discount' => $markdowns->sum('discount_amount'),
+            'average_discount_percent' => $markdowns->avg('discount_percent'),
+            'total_regular_value' => $markdowns->sum('regular_price'),
+            'total_reduced_value' => $markdowns->sum('reduced_price'),
+        ];
+    }
+
+    /* public function compare(Request $request)
+    {
+        $tenantId = $request->session()->get('tenant_id');
+
+        if (!$tenantId) {
+            return redirect()->route('tenants.select');
+        }
+
+        $tenant = Tenant::find($tenantId);
+
+        $periodType = $request->input('period_type', 'week'); // week | month | year
+        if (!in_array($periodType, ['week', 'month', 'year'], true)) {
+            $periodType = 'week';
+        }
+
+        $periodAValue = $request->input('period_a');
+        $periodBValue = $request->input('period_b');
+
+        $rangeA = $periodAValue ? $this->periodToDateRange($periodType, $periodAValue) : null;
+        $rangeB = $periodBValue ? $this->periodToDateRange($periodType, $periodBValue) : null;
+
+        $summaryA = $rangeA ? $this->summaryForRange($rangeA) : null;
+        $summaryB = $rangeB ? $this->summaryForRange($rangeB) : null;
+
+        return view('statistics.compare', [
+            'tenant' => $tenant,
+            'tenant_name' => $tenant->name,
+            'periodType' => $periodType,
+            'periodAValue' => $periodAValue,
+            'periodBValue' => $periodBValue,
+            'weeks' => $this->availablePeriods('week'),
+            'months' => $this->availablePeriods('month'),
+            'years' => $this->availablePeriods('year'),
+            'summaryA' => $summaryA,
+            'summaryB' => $summaryB,
+        ]);
+    }
+ */
+
+    private function summaryForRange(array $range): array
+    {
+        $query = Markdown::whereBetween('scanned_at', [$range[0], $range[1]]);
+
+        return [
+            'total_count' => (clone $query)->count(),
+            'total_discount' => (clone $query)->sum('discount_amount'),
+            'average_discount_percent' => (clone $query)->avg('discount_percent'),
+            'total_regular_value' => (clone $query)->sum('regular_price'),
+            'total_reduced_value' => (clone $query)->sum('reduced_price'),
+        ];
+    }
+
+    private function periodToDateRange(string $type, string $value): array
+    {
+        return match ($type) {
+            'week' => $this->weekToDateRange($value),
+            'month' => $this->monthToDateRange($value),
+            'year' => $this->yearToDateRange($value),
+        };
+    }
+
 }

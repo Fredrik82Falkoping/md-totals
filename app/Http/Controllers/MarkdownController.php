@@ -9,11 +9,6 @@ use Carbon\Carbon;
 
 class MarkdownController extends Controller
 {
-    private array $sortable = [
-        'product_id', 'product_name', 'category', 'scanned_at', 'regular_price',
-        'reduced_price', 'discount_amount', 'discount_percent',
-    ];
-
     public function index(Request $request)
     {
         $tenantId = $request->session()->get('tenant_id');
@@ -74,10 +69,10 @@ class MarkdownController extends Controller
         ')
         ->groupBy('product_id');
 
-         $currentSort = $request->input('sort', 'product_name');
-    $currentDirection = $request->input('direction', 'asc');
+        $currentSort = $request->input('sort', 'product_name');
+        $currentDirection = $request->input('direction', 'asc');
 
-         $sortMapping = [
+        $sortMapping = [
             'product_name' => 'product_name',
             'quantity' => 'total_quantity',
             'purchase_price' => 'total_purchase_price',
@@ -87,17 +82,12 @@ class MarkdownController extends Controller
             'margin_percent' => 'avg_margin_percent',
         ];
 
-        $sortColumn = $sortMapping[$currentSort] ?? 'product_name';
-        $sortDirection = $request->input('direction', 'desc') === 'asc' ? 'asc' : 'desc';
-        $query->orderBy($sortColumn, $currentDirection);
-
-        $sortColumn = $request->input('sort', 'scanned_at');
-
-        if (!in_array($sortColumn, $this->sortable, true)) {
-            $sortColumn = 'scanned_at';
+        if (!array_key_exists($currentSort, $sortMapping)) {
+            $currentSort = 'product_name';
         }
 
-        $query->orderBy($sortColumn, $sortDirection);
+        $currentDirection = $currentDirection === 'desc' ? 'desc' : 'asc';
+        $query->orderBy($sortMapping[$currentSort], $currentDirection);
 
         $summary = [
             'total_count' => (clone $query)->count(),
@@ -125,8 +115,8 @@ class MarkdownController extends Controller
             'currentWeek' => $request->input('week'),
             'currentMonth' => $request->input('month'),
             'currentYear' => $request->input('year'),
-            'currentSort' => $sortColumn,
-            'currentDirection' => $sortDirection,
+            'currentSort' => $currentSort,
+            'currentDirection' => $currentDirection,
         ]);
     }
 

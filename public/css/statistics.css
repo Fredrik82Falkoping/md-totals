@@ -9,7 +9,7 @@ th { background: #f0f0f0; }
 .filters {
     display: flex;
     gap: 1.5rem;
-    align-items: flex-end;
+    align-items: align-center;
     margin-bottom: 1.5rem;
     flex-wrap: wrap;
 }
@@ -97,10 +97,29 @@ th { background: #f0f0f0; }
     color: #333;
 }
 
-.sort-link.active-asc::after {
-    content: " ▲";
+.filter-button {
+    padding: 0.55rem 1.5rem;
+    background: #4a90d9;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    align-self: flex-end;
+    transition: background 0.15s ease;
+    margin-bottom: 1.2rem;
 }
 
-.sort-link.active-desc::after {
-    content: " ▼";
+.filter-button:hover {
+    background: #3a7bc0;
+}
+
+.filter-button:active {
+    background: #2f6aa8;
+}
+
+.filter-button:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(74, 144, 217, 0.3);
 }

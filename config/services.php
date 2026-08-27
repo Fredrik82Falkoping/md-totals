@@ -35,4 +35,7 @@ return [
         ],
     ],
 
+    'mdtotals' => [
+        'base_url' => env('MDTOTALS_API_BASE_URL', 'https://62.119.81.36/api'),
+    ],
 ];

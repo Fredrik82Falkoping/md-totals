@@ -289,3 +289,10 @@ th { background: #f0f0f0; }
 .main-nav a.nav-switch:hover {
     color: #ffffff;
 }
+
+.compare-column table th, .compare-column table td {
+    border: 1px solid #ddd;
+    padding: 0.5rem;
+    font-size: 0.9rem;
+    text-align: left;
+}

@@ -6,7 +6,9 @@ use App\Models\Markdown;
 use App\Models\Tenant;
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
+use InvalidArgumentException;
 
 class MarkdownController extends Controller
 {
@@ -19,51 +21,36 @@ class MarkdownController extends Controller
         }
 
         $tenant = Tenant::find($tenantId);
+        if (!$tenant) {
+            $request->session()->forget('tenant_id');
+            return redirect()->route('tenants.select');
+        }
+
         $query = Markdown::query();
 
         $this->applyFilters($query, $request);
 
-        $discountPercents = Markdown::whereNotNull('discount_percent')
-            ->distinct()
-            ->orderBy('discount_percent')
-            ->pluck('discount_percent');
+        $baseQuery = clone $query; // Används för summeringen, innan vi groupBy:ar för produktlistan
 
-        if (!empty($allDateRanges)) {
-            // Vi grupperar alla datumfrågor inuti en subquery för att inte krocka med kategorifiltret
-            $query->where(function ($subQuery) use ($allDateRanges) {
-                foreach ($allDateRanges as $index => $range) {
-                    [$start, $end] = $range;
-
-                    if ($index === 0) {
-                        $subQuery->whereBetween('scanned_at', [$start, $end]);
-                    } else {
-                        $subQuery->orWhereBetween('scanned_at', [$start, $end]);
-                    }
-                }
-            });
-        }
-
-        $baseQuery = clone $query; // Clone the base query for summary calculations
-
+        // Produktgrupperad lista (en rad per produkt, med summerade/genomsnittliga värden)
         $query->selectRaw('
             product_id,
-            MAX(name) as product_name, -- Hämtar namnet (MAX fungerar bra eftersom namnet är likadant per ID)
-            COUNT(*) as total_scans,    -- Hur många gånger produkten scannats totalt
+            MAX(name) as product_name, -- Namnet är detsamma per ID, MAX fungerar bra för att plocka ut det
+            COUNT(*) as total_scans,
             SUM(quantity) as total_quantity,
             SUM(purchase_price) as total_purchase_price,
             SUM(reduced_price) as total_reduced_price,
             SUM(margin_amount) as total_margin_amount,
             AVG(discount_percent) as avg_discount_percent,
             AVG(margin_percent) as avg_margin_percent
-        ')
-        ->groupBy('product_id');
+        ')->groupBy('product_id');
 
         $currentSort = $request->input('sort', 'product_name');
         $currentDirection = $request->input('direction', 'asc');
 
         $sortMapping = [
             'product_name' => 'product_name',
-            'quantity' => 'total_quantity',
+            'quantity' => 'total_scans',
             'purchase_price' => 'total_purchase_price',
             'reduced_price' => 'total_reduced_price',
             'margin_amount' => 'total_margin_amount',
@@ -78,14 +65,13 @@ class MarkdownController extends Controller
         $currentDirection = $currentDirection === 'desc' ? 'desc' : 'asc';
         $query->orderBy($sortMapping[$currentSort], $currentDirection);
 
+        // Summering över HELA urvalet (inte bara de rader som visas), räknat i databasen
         $summary = [
-            'total_count' => (clone $baseQuery)->sum('quantity'),
+            'total_count' => (clone $baseQuery)->count(),
             'total_discount' => (clone $baseQuery)->sum('discount_amount'),
             'average_discount_percent' => (clone $baseQuery)->avg('discount_percent'),
             'total_margin' => (clone $baseQuery)->sum('margin_amount'),
         ];
-
-        // $markdowns = $query->limit(100)->get();
 
         $discountPercents = Markdown::whereNotNull('discount_percent')
             ->distinct()
@@ -115,108 +101,6 @@ class MarkdownController extends Controller
             'currentSort' => $currentSort,
             'currentDirection' => $currentDirection,
         ]);
-    }
-
-    private function weekToDateRange(string $isoWeek): array
-    {
-        // $isoWeek format: "2023-W08"
-        [$year, $week] = sscanf($isoWeek, '%d-W%d');
-
-        $start = Carbon::create()->setISODate($year, $week)->startOfWeek();
-        $end = (clone $start)->endOfWeek();
-
-        return [$start, $end];
-    }
-
-    private function monthToDateRange(string $month): array
-    {
-        // $month format: "2023-08"
-        [$year, $month] = sscanf($month, '%d-%d');
-
-        $start = Carbon::create($year, $month, 1)->startOfMonth();
-        $end = (clone $start)->endOfMonth();
-
-        return [$start, $end];
-    }
-
-    private function yearToDateRange(string $year): array
-    {
-        $start = Carbon::create((int) $year, 1, 1)->startOfYear();
-        $end = (clone $start)->endOfYear();
-
-        return [$start, $end];
-    }
-
-     /**
-     * Tar emot en array med blandade tidsfilter (t.ex. ["2023-W08", "2023-08", "2024"])
-     * och returnerar en array med start- och slutdatum för varje val.
-     *
-     * @param array|string|null $filters
-     * @return array
-     */
-    public function getMultipleFilterRanges(array|string|null $filters): array
-    {
-        if (empty($filters)) {
-            return [];
-        }
-
-        // Säkerställ att vi alltid jobbar med en array, även om det bara skickades en singelsträng
-        $filterArray = is_array($filters) ? $filters : [$filters];
-        $ranges = [];
-
-        foreach ($filterArray as $value) {
-            if (empty($value)) {
-                continue;
-            }
-
-            // Matcha vecka: t.ex. "2023-W08"
-            if (preg_match('/^\d{4}-W\d{1,2}$/', $value)) {
-                $ranges[] = $this->weekToDateRange($value);
-            }
-            // Matcha månad: t.ex. "2023-08"
-            elseif (preg_match('/^\d{4}-\d{2}$/', $value)) {
-                $ranges[] = $this->monthToDateRange($value);
-            }
-            // Matcha år: t.ex. "2024"
-            elseif (preg_match('/^\d{4}$/', $value)) {
-                $ranges[] = $this->yearToDateRange($value);
-            }
-        }
-
-        return $ranges;
-    }
-
-    private function availableWeeks(): array
-    {
-        return Markdown::query()
-            ->pluck('scanned_at')
-            ->map(fn ($date) => Carbon::parse($date)->isoFormat('GGGG-[W]WW'))
-            ->unique()
-            ->sort()
-            ->values()
-            ->toArray();
-    }
-
-    private function availablePeriods(string $period): array
-    {
-        return Markdown::query()
-            ->pluck('scanned_at')
-            ->map(function ($date) use ($period) {
-                $date = Carbon::parse($date);
-
-                return match ($period) {
-                    'week' => $date->isoFormat('GGGG-[W]WW'),
-                    'month' => $date->format('Y-m'),
-                    'year' => $date->format('Y'),
-                    default => throw new InvalidArgumentException(
-                        "Unknown period: {$period}"
-                    ),
-                };
-            })
-            ->unique()
-            ->sort()
-            ->values()
-            ->toArray();
     }
 
     public function productDetail(Request $request, string $productId)
@@ -256,6 +140,62 @@ class MarkdownController extends Controller
         ]);
     }
 
+    public function compare(Request $request)
+    {
+        $tenantId = $request->session()->get('tenant_id');
+
+        if (!$tenantId) {
+            return redirect()->route('tenants.select');
+        }
+
+        $tenant = Tenant::find($tenantId);
+        if (!$tenant) {
+            $request->session()->forget('tenant_id');
+            return redirect()->route('tenants.select');
+        }
+
+        $periodType = $request->input('period_type', 'week');
+        if (!in_array($periodType, ['week', 'month', 'year'], true)) {
+            $periodType = 'week';
+        }
+
+        $periodAValue = $request->input('period_a');
+        $periodBValue = $request->input('period_b');
+        $categories = $request->input('category', []);
+
+        $rangeA = $periodAValue ? $this->periodToDateRange($periodType, $periodAValue) : null;
+        $rangeB = $periodBValue ? $this->periodToDateRange($periodType, $periodBValue) : null;
+
+        // Summering räknas över HELA perioden i databasen - inte begränsad av detaljlistans limit(200)
+        $summaryA = $rangeA ? $this->summaryForRange($rangeA, $categories) : null;
+        $summaryB = $rangeB ? $this->summaryForRange($rangeB, $categories) : null;
+
+        // Detaljlistan är separat och medvetet begränsad, bara för visning i tabellen
+        $markdownsA = $rangeA ? $this->markdownsForRange($rangeA, $categories) : collect();
+        $markdownsB = $rangeB ? $this->markdownsForRange($rangeB, $categories) : collect();
+
+        return view('statistics.compare', [
+            'tenant' => $tenant,
+            'tenant_name' => $tenant->name,
+            'periodType' => $periodType,
+            'periodAValue' => $periodAValue,
+            'periodBValue' => $periodBValue,
+            'weeks' => $this->availablePeriods('week'),
+            'months' => $this->availablePeriods('month'),
+            'years' => $this->availablePeriods('year'),
+            'allCategories' => Markdown::whereNotNull('category')->distinct()->orderBy('category')->pluck('category'),
+            'currentCategories' => $categories,
+            'summaryA' => $summaryA,
+            'summaryB' => $summaryB,
+            'markdownsA' => $markdownsA,
+            'markdownsB' => $markdownsB,
+        ]);
+    }
+
+    /**
+     * Applicerar gemensamma filter (kategori, vecka/månad/år, rabatt-%) på en query.
+     * Används av både index() och productDetail() så filtreringen är konsekvent.
+     */
     private function applyFilters(Builder $query, Request $request): void
     {
         if ($request->filled('category')) {
@@ -278,6 +218,7 @@ class MarkdownController extends Controller
         }
 
         if (!empty($allDateRanges)) {
+            // Grupperar alla datumintervall i en subquery så de inte krockar med övriga filter (AND)
             $query->where(function ($subQuery) use ($allDateRanges) {
                 foreach ($allDateRanges as $index => $range) {
                     [$start, $end] = $range;
@@ -292,52 +233,32 @@ class MarkdownController extends Controller
         }
     }
 
-    public function compare(Request $request)
+    /**
+     * Summering (count/sum/avg) för ett enskilt datumintervall, räknat i databasen.
+     * Används av compare() - ALDRIG begränsad av någon limit, så siffrorna blir korrekta
+     * oavsett hur många rader perioden faktiskt innehåller.
+     */
+    private function summaryForRange(array $range, array $categories = []): array
     {
-        $tenantId = $request->session()->get('tenant_id');
+        $query = Markdown::whereBetween('scanned_at', [$range[0], $range[1]]);
 
-        if (!$tenantId) {
-            return redirect()->route('tenants.select');
+        if (!empty($categories)) {
+            $query->whereIn('category', $categories);
         }
 
-        $tenant = Tenant::find($tenantId);
-
-        $periodType = $request->input('period_type', 'week');
-        if (!in_array($periodType, ['week', 'month', 'year'], true)) {
-            $periodType = 'week';
-        }
-
-        $periodAValue = $request->input('period_a');
-        $periodBValue = $request->input('period_b');
-        $categories = $request->input('category', []); // array, multiselect
-
-        $rangeA = $periodAValue ? $this->periodToDateRange($periodType, $periodAValue) : null;
-        $rangeB = $periodBValue ? $this->periodToDateRange($periodType, $periodBValue) : null;
-
-        $markdownsA = $rangeA ? $this->markdownsForRange($rangeA, $categories) : collect();
-        $markdownsB = $rangeB ? $this->markdownsForRange($rangeB, $categories) : collect();
-
-        $summaryA = $rangeA ? $this->summaryFromCollection($markdownsA) : null;
-        $summaryB = $rangeB ? $this->summaryFromCollection($markdownsB) : null;
-
-        return view('statistics.compare', [
-            'tenant' => $tenant,
-            'tenant_name' => $tenant->name,
-            'periodType' => $periodType,
-            'periodAValue' => $periodAValue,
-            'periodBValue' => $periodBValue,
-            'weeks' => $this->availablePeriods('week'),
-            'months' => $this->availablePeriods('month'),
-            'years' => $this->availablePeriods('year'),
-            'allCategories' => Markdown::whereNotNull('category')->distinct()->orderBy('category')->pluck('category'),
-            'currentCategories' => $categories,
-            'summaryA' => $summaryA,
-            'summaryB' => $summaryB,
-            'markdownsA' => $markdownsA,
-            'markdownsB' => $markdownsB,
-        ]);
+        return [
+            'total_count' => (clone $query)->count(),
+            'total_discount' => (clone $query)->sum('discount_amount'),
+            'average_discount_percent' => (clone $query)->avg('discount_percent'),
+            'total_regular_value' => (clone $query)->sum('regular_price'),
+            'total_reduced_value' => (clone $query)->sum('reduced_price'),
+        ];
     }
 
+    /**
+     * Detaljlista (enskilda rader) för ett datumintervall - begränsad till 200 rader,
+     * bara avsedd för visning i tabellen, ANVÄNDS INTE för summering.
+     */
     private function markdownsForRange(array $range, array $categories = [])
     {
         $query = Markdown::whereBetween('scanned_at', [$range[0], $range[1]]);
@@ -349,67 +270,34 @@ class MarkdownController extends Controller
         return $query->orderByDesc('scanned_at')->limit(200)->get();
     }
 
-    private function summaryFromCollection($markdowns): array
+    private function weekToDateRange(string $isoWeek): array
     {
-        return [
-            'total_count' => $markdowns->count(),
-            'total_discount' => $markdowns->sum('discount_amount'),
-            'average_discount_percent' => $markdowns->avg('discount_percent'),
-            'total_regular_value' => $markdowns->sum('regular_price'),
-            'total_reduced_value' => $markdowns->sum('reduced_price'),
-        ];
+        // $isoWeek format: "2023-W08"
+        [$year, $week] = sscanf($isoWeek, '%d-W%d');
+
+        $start = Carbon::create()->setISODate($year, $week)->startOfWeek();
+        $end = (clone $start)->endOfWeek();
+
+        return [$start, $end];
     }
 
-    /* public function compare(Request $request)
+    private function monthToDateRange(string $month): array
     {
-        $tenantId = $request->session()->get('tenant_id');
+        // $month format: "2023-08"
+        [$year, $month] = sscanf($month, '%d-%d');
 
-        if (!$tenantId) {
-            return redirect()->route('tenants.select');
-        }
+        $start = Carbon::create($year, $month, 1)->startOfMonth();
+        $end = (clone $start)->endOfMonth();
 
-        $tenant = Tenant::find($tenantId);
-
-        $periodType = $request->input('period_type', 'week'); // week | month | year
-        if (!in_array($periodType, ['week', 'month', 'year'], true)) {
-            $periodType = 'week';
-        }
-
-        $periodAValue = $request->input('period_a');
-        $periodBValue = $request->input('period_b');
-
-        $rangeA = $periodAValue ? $this->periodToDateRange($periodType, $periodAValue) : null;
-        $rangeB = $periodBValue ? $this->periodToDateRange($periodType, $periodBValue) : null;
-
-        $summaryA = $rangeA ? $this->summaryForRange($rangeA) : null;
-        $summaryB = $rangeB ? $this->summaryForRange($rangeB) : null;
-
-        return view('statistics.compare', [
-            'tenant' => $tenant,
-            'tenant_name' => $tenant->name,
-            'periodType' => $periodType,
-            'periodAValue' => $periodAValue,
-            'periodBValue' => $periodBValue,
-            'weeks' => $this->availablePeriods('week'),
-            'months' => $this->availablePeriods('month'),
-            'years' => $this->availablePeriods('year'),
-            'summaryA' => $summaryA,
-            'summaryB' => $summaryB,
-        ]);
+        return [$start, $end];
     }
- */
 
-    private function summaryForRange(array $range): array
+    private function yearToDateRange(string $year): array
     {
-        $query = Markdown::whereBetween('scanned_at', [$range[0], $range[1]]);
+        $start = Carbon::create((int) $year, 1, 1)->startOfYear();
+        $end = (clone $start)->endOfYear();
 
-        return [
-            'total_count' => (clone $query)->count(),
-            'total_discount' => (clone $query)->sum('discount_amount'),
-            'average_discount_percent' => (clone $query)->avg('discount_percent'),
-            'total_regular_value' => (clone $query)->sum('regular_price'),
-            'total_reduced_value' => (clone $query)->sum('reduced_price'),
-        ];
+        return [$start, $end];
     }
 
     private function periodToDateRange(string $type, string $value): array
@@ -421,4 +309,83 @@ class MarkdownController extends Controller
         };
     }
 
+    /**
+     * Tar emot en array med blandade tidsfilter (t.ex. ["2023-W08", "2023-08", "2024"])
+     * och returnerar en array med start- och slutdatum för varje val.
+     */
+    private function getMultipleFilterRanges(array|string|null $filters): array
+    {
+        if (empty($filters)) {
+            return [];
+        }
+
+        $filterArray = is_array($filters) ? $filters : [$filters];
+        $ranges = [];
+
+        foreach ($filterArray as $value) {
+            if (empty($value)) {
+                continue;
+            }
+
+            if (preg_match('/^\d{4}-W\d{1,2}$/', $value)) {
+                $ranges[] = $this->weekToDateRange($value);
+            } elseif (preg_match('/^\d{4}-\d{2}$/', $value)) {
+                $ranges[] = $this->monthToDateRange($value);
+            } elseif (preg_match('/^\d{4}$/', $value)) {
+                $ranges[] = $this->yearToDateRange($value);
+            }
+        }
+
+        return $ranges;
+    }
+
+    /**
+     * Returnerar tillgängliga perioder (vecka/månad/år) som finns i datan för aktuell tenant.
+     * Cachas i 6h eftersom detta annars loopar Carbon över ALLA rader i PHP - dyrt vid
+     * stora datamängder (orsakade tidigare ett 500-fel för butiker med 50 000+ rader).
+     * Cachen rensas vid import, se MarkdownImportService::importForTenant().
+     */
+    private function availablePeriods(string $period): array
+    {
+        $tenantId = session('tenant_id');
+        $cacheKey = "available_periods_{$period}_tenant_{$tenantId}";
+
+        return Cache::remember($cacheKey, now()->addHours(6), function () use ($period) {
+            if ($period === 'month') {
+                return Markdown::query()
+                    ->selectRaw("DATE_FORMAT(scanned_at, '%Y-%m') as period_value")
+                    ->distinct()
+                    ->orderBy('period_value')
+                    ->pluck('period_value')
+                    ->toArray();
+            }
+
+            if ($period === 'year') {
+                return Markdown::query()
+                    ->selectRaw("DATE_FORMAT(scanned_at, '%Y') as period_value")
+                    ->distinct()
+                    ->orderBy('period_value')
+                    ->pluck('period_value')
+                    ->toArray();
+            }
+
+            if ($period === 'week') {
+                // ISO-vecka kan inte beräknas korrekt i SQLite, måste göras i PHP.
+                // Undviker isoFormat() (extremt långsam) - använder istället DateTime::format('o-\WW'),
+                // som ger samma ISO-veckonummer men utan Carbons tunga lokaliseringssystem.
+                return Markdown::query()
+                    ->pluck('scanned_at')
+                    ->map(function ($date) {
+                        $dt = new \DateTime($date);
+                        return $dt->format('o-\WW'); // t.ex. "2026-W12"
+                    })
+                    ->unique()
+                    ->sort()
+                    ->values()
+                    ->toArray();
+            }
+
+            throw new InvalidArgumentException("Unknown period: {$period}");
+        });
+    }
 }

@@ -133,7 +133,7 @@
                     <td>{{ $markdown->product_name ?? $markdown->product_id }}</td>
                     
                     <!-- Antal (Visar stycken. Om din app använder vikt, kan du lägga till logik för weight_kg här) -->
-                    <td>{{ number_format($markdown->total_quantity, 0, ',', ' ') }} st</td>
+                    <td>{{ number_format($markdown->total_scans, 0, ',', ' ') }} st</td>
                     
                     <!-- Total kronor inköp -->
                     <td>{{ number_format($markdown->total_purchase_price, 2, ',', ' ') }} kr</td>

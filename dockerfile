@@ -1,6 +1,6 @@
 # --- PHP VERSION ---
 # Byt mellan 8.4 eller 8.5 här:
-FROM php:8.5-fpm
+FROM php:8.4-fpm
 
 # --- System dependencies ---
 RUN apt-get update && apt-get install -y \

@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
 use InvalidArgumentException;
+use Illuminate\Support\Facades\DB;
 
 class MarkdownController extends Controller
 {
@@ -351,41 +352,68 @@ class MarkdownController extends Controller
         $cacheKey = "available_periods_{$period}_tenant_{$tenantId}";
 
         return Cache::remember($cacheKey, now()->addHours(6), function () use ($period) {
-            if ($period === 'month') {
-                return Markdown::query()
-                    ->selectRaw("DATE_FORMAT(scanned_at, '%Y-%m') as period_value")
-                    ->distinct()
-                    ->orderBy('period_value')
-                    ->pluck('period_value')
-                    ->toArray();
-            }
-
-            if ($period === 'year') {
-                return Markdown::query()
-                    ->selectRaw("DATE_FORMAT(scanned_at, '%Y') as period_value")
-                    ->distinct()
-                    ->orderBy('period_value')
-                    ->pluck('period_value')
-                    ->toArray();
-            }
-
-            if ($period === 'week') {
-                // ISO-vecka kan inte beräknas korrekt i SQLite, måste göras i PHP.
-                // Undviker isoFormat() (extremt långsam) - använder istället DateTime::format('o-\WW'),
-                // som ger samma ISO-veckonummer men utan Carbons tunga lokaliseringssystem.
-                return Markdown::query()
-                    ->pluck('scanned_at')
-                    ->map(function ($date) {
-                        $dt = new \DateTime($date);
-                        return $dt->format('o-\WW'); // t.ex. "2026-W12"
-                    })
-                    ->unique()
-                    ->sort()
-                    ->values()
-                    ->toArray();
-            }
-
-            throw new InvalidArgumentException("Unknown period: {$period}");
+            return match ($period) {
+                'month', 'year' => $this->distinctSqlPeriods($period),
+                'week' => $this->distinctWeeks(),
+                default => throw new InvalidArgumentException("Unknown period: {$period}"),
+            };
         });
+    }
+
+    /**
+     * Hämtar distinkta månader/år direkt i SQL (snabbt, databasoberoende).
+     */
+    private function distinctSqlPeriods(string $period): array
+    {
+        $format = $this->sqlDateFormat($period);
+
+        return Markdown::query()
+            ->selectRaw("{$format} as period_value")
+            ->distinct()
+            ->orderBy('period_value')
+            ->pluck('period_value')
+            ->toArray();
+    }
+
+    /**
+     * Returnerar rätt SQL-uttryck för att formatera scanned_at som 'YYYY-MM' eller 'YYYY',
+     * beroende på vilken databasdrivrutin som är aktiv.
+     */
+    private function sqlDateFormat(string $period): string
+    {
+        $driver = DB::connection()->getDriverName();
+        $pattern = $period === 'month' ? 'Y-m' : 'Y';
+
+        return match ($driver) {
+            'sqlite' => match ($pattern) {
+                'Y-m' => "strftime('%Y-%m', scanned_at)",
+                'Y' => "strftime('%Y', scanned_at)",
+            },
+            'mysql', 'mariadb' => match ($pattern) {
+                'Y-m' => "DATE_FORMAT(scanned_at, '%Y-%m')",
+                'Y' => "DATE_FORMAT(scanned_at, '%Y')",
+            },
+            'pgsql' => match ($pattern) {
+                'Y-m' => "TO_CHAR(scanned_at, 'YYYY-MM')",
+                'Y' => "TO_CHAR(scanned_at, 'YYYY')",
+            },
+            default => throw new InvalidArgumentException("Unsupported database driver: {$driver}"),
+        };
+    }
+
+    /**
+     * ISO-vecka kan inte beräknas konsekvent över databasmotorer, görs i PHP oavsett driver.
+     * Undviker Carbon::isoFormat() (extremt långsam) - använder DateTime::format('o-\WW') istället,
+     * som ger samma ISO-veckonummer men utan Carbons tunga lokaliseringssystem.
+     */
+    private function distinctWeeks(): array
+    {
+        return Markdown::query()
+            ->pluck('scanned_at')
+            ->map(fn ($date) => (new \DateTime($date))->format('o-\WW')) // t.ex. "2026-W12"
+            ->unique()
+            ->sort()
+            ->values()
+            ->toArray();
     }
 }

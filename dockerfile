@@ -1,24 +1,34 @@
-FROM php:8.2-fpm
+# --- PHP VERSION ---
+# Byt mellan 8.4 eller 8.5 här:
+FROM php:8.5-fpm
 
-# Install system dependencies
+# --- System dependencies ---
 RUN apt-get update && apt-get install -y \
-    git curl zip unzip libonig-dev libxml2-dev libsqlite3-dev
+    git curl zip unzip \
+    libonig-dev libxml2-dev libsqlite3-dev \
+    libzip-dev libpng-dev libjpeg-dev libfreetype6-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg
 
-# Install PHP extensions
-RUN docker-php-ext-install pdo pdo_mysql pdo_sqlite mbstring tokenizer xml
+# --- PHP extensions för Laravel ---
+RUN docker-php-ext-install \
+    pdo pdo_mysql pdo_sqlite \
+    mbstring tokenizer xml gd zip
 
-# Install Composer
+# --- Composer ---
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Copy app
+# --- App directory ---
 WORKDIR /var/www/html
 COPY . .
 
-# Install dependencies
+# --- Installera dependencies ---
 RUN composer install --no-dev --optimize-autoloader
 
-# Expose port
+# --- Cachea Laravel config ---
+RUN php artisan config:cache || true
+
+# --- Exponera port ---
 EXPOSE 8000
 
-# Start Laravel
+# --- Starta Laravel ---
 CMD php artisan serve --host=0.0.0.0 --port=8000

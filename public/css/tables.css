@@ -1,0 +1,21 @@
+.sort-link {
+    text-decoration: none;
+    color: #333;
+}
+
+.sort-link.active-asc::after {
+    content: " ▲";
+}
+
+.sort-link.active-desc::after {
+    content: " ▼";
+}
+
+.product-row {
+    cursor: pointer;
+    transition: background 0.1s ease;
+}
+
+.product-row:hover {
+    background: #f0f6fc;
+}

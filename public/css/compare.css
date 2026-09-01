@@ -1,0 +1,59 @@
+.compare-columns {
+    display: flex;
+    gap: 2rem;
+    margin-top: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.compare-column {
+    flex: 1;
+    min-width: 300px;
+    background: #f9f9f9;
+    border-radius: 8px;
+    padding: 1.2rem 1.5rem;
+}
+
+.compare-column table th, .compare-column table td {
+    border: 1px solid #ddd;
+    padding: 0.5rem;
+    font-size: 0.9rem;
+    text-align: left;
+}
+
+.summary-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 0.5rem;
+}
+
+.summary-table th, .summary-table td {
+    padding: 0.4rem 0;
+    text-align: left;
+    border-bottom: 1px solid #e0e0e0;
+    font-size: 0.9rem;
+}
+
+.summary-table th {
+    color: #555;
+    font-weight: 600;
+}
+
+.date-range {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.date-range input[type="date"] {
+    padding: 0.4rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+.compare-diff {
+    margin-top: 1.5rem;
+    padding: 1rem 1.5rem;
+    background: #eef6ff;
+    border-radius: 8px;
+    max-width: 300px;
+}

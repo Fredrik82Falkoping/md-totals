@@ -1,0 +1,36 @@
+.main-nav {
+    background: #2c3e50;
+    padding: 0.8rem 2rem;
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+}
+
+.main-nav a {
+    color: #dce6f0;
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-weight: 500;
+    padding: 0.4rem 0.2rem;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.main-nav a:hover {
+    color: #ffffff;
+}
+
+.main-nav a.active {
+    color: #ffffff;
+    border-bottom-color: #4a90d9;
+}
+
+.main-nav a.nav-switch {
+    margin-left: auto;
+    color: #a8b8c8;
+    font-size: 0.85rem;
+}
+
+.main-nav a.nav-switch:hover {
+    color: #ffffff;
+}

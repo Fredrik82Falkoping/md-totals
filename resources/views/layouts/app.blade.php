@@ -4,6 +4,18 @@
     <meta charset="UTF-8">
     <title>MD Totals</title>
     <link rel="stylesheet" href="{{ asset('css/statistics.css') }}">
+    <head>
+    <meta charset="UTF-8">
+    <title>MD Totals</title>
+    <link rel="stylesheet" href="{{ asset('css/base.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/navigation.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/filters.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/tables.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/modal.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/compare.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/login.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/loading.css') }}">
+</head>
 </head>
 <body>
     <div class="container">

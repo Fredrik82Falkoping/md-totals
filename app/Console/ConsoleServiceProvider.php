@@ -12,6 +12,7 @@ class ConsoleServiceProvider extends ServiceProvider
      */
     protected $commands = [
         \App\Console\Commands\ImportMarkdownsCsv::class, // Lägg till din klass här!
+        \App\Console\Commands\CreateUser::class,
     ];
 
     /**

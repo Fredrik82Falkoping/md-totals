@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="sv">
 <head>
     <meta charset="UTF-8">
     <title>MD Totals</title>
@@ -19,10 +19,17 @@
 </head>
 <body>
     <div class="container">
-        @if (session()->has('tenant_id'))
+        @if (auth()->check() && session()->has('tenant_id'))
             <nav class="main-nav">
                 <a href="{{ route('statistics.index') }}">Statistik</a>
                 <a href="{{ route('statistics.compare') }}">Jämför perioder</a>
+                @if (auth()->user()->is_admin)
+                    <a href="{{ route('tenants.select') }}">Byt butik</a>
+                @endif
+                <form method="POST" action="{{ route('logout') }}" class="logout-form">
+                    @csrf
+                    <button type="submit">Logga ut</button>
+                </form>
             </nav>
         @endif
         @yield('content')

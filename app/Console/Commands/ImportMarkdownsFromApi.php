@@ -30,6 +30,8 @@ class ImportMarkdownsFromApi extends Command
         }
 
         // Ny tenant: testa API-anropet FÖRST, skapa bara raden om det lyckas
+        $this->info("Ny tenant, testar anslutning mot \"{$tenantEndpoint}\" innan den sparas...");
+
         $tempTenant = new Tenant([
             'store_code' => $storeCode,
             'name' => $name,

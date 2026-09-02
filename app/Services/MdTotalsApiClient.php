@@ -26,7 +26,7 @@ class MdTotalsApiClient
         $formattedAfter = $after->format('Y.m.d H:i:s.u');
         $url = "{$this->baseUrl}/{$tenantEndpoint}/MdTotals/ReadItemsLaterThan";
 
-        Log::info('MdTotals API: skickar strömmande anrop', [
+        Log::info('MdTotals API: ', [
             'url' => $url,
             'after' => $formattedAfter,
         ]);

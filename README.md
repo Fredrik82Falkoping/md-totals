@@ -95,6 +95,20 @@ The program has a command for importing markdowns from a csv-file. The file shou
 php artisan md:import-csv [full path to csv file]
 ```
 
+## Create users
+An admin user has full access. Admin can se a list of all stores and can see stats for all of them.
+To create an admin user in a new database use this command:
+```
+php artisan user:create admin --admin
+```
+
+To create a user for a store make up a user name and use the store_code as password the first time
+```
+php artisan user:create "Butik Nord" NORD001
+```
+
+Todo: extract the list of stores from a future API call.
+
 ## Kontakt / ägarskap
 
 - Utvecklare: Fredrik Olsson

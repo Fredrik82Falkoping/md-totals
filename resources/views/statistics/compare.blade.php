@@ -7,11 +7,11 @@
 <form method="GET" action="{{ route('statistics.compare') }}" id="compareForm" class="filters">
 
     <div class="filter-group">
-        <label for="category">Kategori</label>
-        <select name="category[]" id="category" multiple>
-            @foreach ($allCategories as $cat)
-                <option value="{{ $cat }}" @selected(in_array($cat, $currentCategories))>
-                    {{ $cat }}
+        <label for="group_key">Kategori</label>
+        <select name="group_key[]" id="group_key" multiple>
+            @foreach ($allGroupKeys as $key)
+                <option value="{{ $key }}" @selected(in_array($key, $currentGroupKeys))>
+                    {{ $key }}
                 </option>
             @endforeach
         </select>
@@ -131,7 +131,7 @@
                     @forelse ($markdownsA as $m)
                         <tr>
                             <td>{{ $m->product_id }}</td>
-                            <td>{{ $m->category ?? '—' }}</td>
+                            <td>{{ $m->group_key ?? '—' }}</td>
                             <td>{{ $m->scanned_at }}</td>
                             <td>{{ number_format($m->regular_price, 2) }} kr</td>
                             <td>{{ number_format($m->reduced_price, 2) }} kr</td>
@@ -176,7 +176,7 @@
                     @forelse ($markdownsA as $m)
                         <tr>
                             <td>{{ $m->product_id }}</td>
-                            <td>{{ $m->category ?? '—' }}</td>
+                            <td>{{ $m->group_key ?? '—' }}</td>
                             <td>{{ $m->scanned_at }}</td>
                             <td>{{ number_format($m->regular_price, 2) }} kr</td>
                             <td>{{ number_format($m->reduced_price, 2) }} kr</td>

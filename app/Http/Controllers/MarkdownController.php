@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
 use InvalidArgumentException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class MarkdownController extends Controller
 {
@@ -37,6 +38,7 @@ class MarkdownController extends Controller
         $query->selectRaw('
             product_id,
             MAX(name) as product_name, -- Namnet är detsamma per ID, MAX fungerar bra för att plocka ut det
+            MAX(group_key) as group_key,
             COUNT(*) as total_scans,
             SUM(quantity) as total_quantity,
             SUM(purchase_price) as total_purchase_price,
@@ -51,6 +53,7 @@ class MarkdownController extends Controller
 
         $sortMapping = [
             'product_name' => 'product_name',
+            'group_key' => 'group_key',
             'quantity' => 'total_scans',
             'purchase_price' => 'total_purchase_price',
             'reduced_price' => 'total_reduced_price',
@@ -79,7 +82,8 @@ class MarkdownController extends Controller
             ->orderBy('discount_percent')
             ->pluck('discount_percent');
 
-        $categories = Markdown::whereNotNull('category')->distinct()->pluck('category');
+        // $categories = Markdown::whereNotNull('category')->distinct()->pluck('category');
+        $groupKeys = Markdown::whereNotNull('group_key')->distinct()->pluck('group_key')->sort()->values();
         $weeks = $this->availablePeriods('week');
         $months = $this->availablePeriods('month');
         $years = $this->availablePeriods('year');
@@ -89,7 +93,8 @@ class MarkdownController extends Controller
             'tenant_name' => $tenant->name,
             'summary' => $summary,
             'markdowns' => $query->limit(100)->get(),
-            'categories' => $categories,
+            //'categories' => $categories,
+            'groupKeys' => $groupKeys,
             'weeks' => $weeks,
             'months' => $months,
             'years' => $years,
@@ -163,17 +168,18 @@ class MarkdownController extends Controller
         $periodAValue = $request->input('period_a');
         $periodBValue = $request->input('period_b');
         $categories = $request->input('category', []);
+        $groupKeys = $request->input('group_key', []);
 
         $rangeA = $periodAValue ? $this->periodToDateRange($periodType, $periodAValue) : null;
         $rangeB = $periodBValue ? $this->periodToDateRange($periodType, $periodBValue) : null;
 
         // Summering räknas över HELA perioden i databasen - inte begränsad av detaljlistans limit(200)
-        $summaryA = $rangeA ? $this->summaryForRange($rangeA, $categories) : null;
-        $summaryB = $rangeB ? $this->summaryForRange($rangeB, $categories) : null;
+        $summaryA = $rangeA ? $this->summaryForRange($rangeA, $groupKeys) : null;
+        $summaryB = $rangeB ? $this->summaryForRange($rangeB, $groupKeys) : null;
 
         // Detaljlistan är separat och medvetet begränsad, bara för visning i tabellen
-        $markdownsA = $rangeA ? $this->markdownsForRange($rangeA, $categories) : collect();
-        $markdownsB = $rangeB ? $this->markdownsForRange($rangeB, $categories) : collect();
+        $markdownsA = $rangeA ? $this->markdownsForRange($rangeA, $groupKeys) : collect();
+        $markdownsB = $rangeB ? $this->markdownsForRange($rangeB, $groupKeys) : collect();
 
         return view('statistics.compare', [
             'tenant' => $tenant,
@@ -185,7 +191,9 @@ class MarkdownController extends Controller
             'months' => $this->availablePeriods('month'),
             'years' => $this->availablePeriods('year'),
             'allCategories' => Markdown::whereNotNull('category')->distinct()->orderBy('category')->pluck('category'),
+            'allGroupKeys' => Markdown::whereNotNull('group_key')->distinct()->orderBy('group_key')->pluck('group_key'),
             'currentCategories' => $categories,
+            'currentGroupKeys' => $groupKeys,
             'summaryA' => $summaryA,
             'summaryB' => $summaryB,
             'markdownsA' => $markdownsA,
@@ -201,6 +209,10 @@ class MarkdownController extends Controller
     {
         if ($request->filled('category')) {
             $query->whereIn('category', (array) $request->input('category'));
+        }
+
+        if ($request->filled('group_key')) {
+            $query->whereIn('group_key', (array) $request->input('group_key'));
         }
 
         $allDateRanges = [];
@@ -244,7 +256,7 @@ class MarkdownController extends Controller
         $query = Markdown::whereBetween('scanned_at', [$range[0], $range[1]]);
 
         if (!empty($categories)) {
-            $query->whereIn('category', $categories);
+            $query->whereIn('group_key', $categories);
         }
 
         return [
@@ -265,7 +277,7 @@ class MarkdownController extends Controller
         $query = Markdown::whereBetween('scanned_at', [$range[0], $range[1]]);
 
         if (!empty($categories)) {
-            $query->whereIn('category', $categories);
+            $query->whereIn('group_key', $categories);
         }
 
         return $query->orderByDesc('scanned_at')->limit(200)->get();

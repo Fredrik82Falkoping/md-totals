@@ -26,12 +26,12 @@
     <form method="GET" action="{{ route('statistics.index') }}" id="filterForm" class="filters">
         
         <div class="filter-group">
-            <label for="category">Kategori</label>
-            <select name="category[]" id="category" multiple>
+            <label for="group_key">Kategori</label>
+            <select name="group_key[]" id="group_key" multiple>
                 <option value="">Alla kategorier</option>
-                @foreach ($categories as $category)
-                    <option value="{{ $category }}" @selected(in_array($category, request()->input('category', [])))>
-                        {{ $category }}
+                @foreach ($groupKeys as $groupKey)
+                    <option value="{{ $groupKey }}" @selected(in_array($groupKey, request()->input('group_key', [])))>
+                        {{ $groupKey }}
                     </option>
                 @endforeach
             </select>
@@ -102,6 +102,7 @@
                     // Dina nya önskade kolumner
                     $columns = [
                         'product_name' => 'Produktnamn',
+                        'category' => 'Kategori',
                         'quantity' => 'Antal',
                         'purchase_price' => 'Total kronor inköp',
                         'reduced_price' => 'Total kronor nedsatt',
@@ -131,7 +132,8 @@
                 <tr class="product-row" data-product-id="{{ $markdown->product_id }}">
                     <!-- Produktnamn (eller ID om namn saknas) -->
                     <td>{{ $markdown->product_name ?? $markdown->product_id }}</td>
-                    
+                    <!-- Gruppnyckel (kategori) -->
+                    <td>{{ $markdown->group_key }}</td>
                     <!-- Antal (Visar stycken. Om din app använder vikt, kan du lägga till logik för weight_kg här) -->
                     <td>{{ number_format($markdown->total_scans, 0, ',', ' ') }} st</td>
                     

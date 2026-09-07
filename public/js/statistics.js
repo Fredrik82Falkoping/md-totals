@@ -30,7 +30,7 @@ $(document).ready(function () {
         allowClear: true
     });
 
-    $('#category, #week, #year, #discount_percent').select2({
+    $('#category, #group_key, #week, #year, #discount_percent').select2({
         width: '200px',
         placeholder: 'Alla',
     });

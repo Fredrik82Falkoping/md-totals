@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Builder;
 class Markdown extends Model
 {
     protected $fillable = [
-        'product_id', 'name', 'k_id', 'category', 'scanned_at', 'month', 'week',
+        'product_id', 'name', 'k_id', 'category', 'group_key', 'scanned_at', 'month', 'week',
         'quantity', 'weight_kg', 'regular_price', 'reduced_price', 'discount_amount',
         'discount_percent', 'purchase_price', 'margin_amount', 'margin_percent',
         'tenant_id',

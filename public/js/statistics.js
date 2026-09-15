@@ -4,6 +4,16 @@ $(document).ready(function () {
         $('#filterForm').submit();
     });
 
+    $('#compareForm').on('submit', function () {
+        var periodA = $('.period-a-input:visible').val();
+        var periodB = $('.period-b-input:visible').val();
+        if (periodA != periodB) {
+            return true;
+        } 
+        alert('Välj olika perioder för att jämföra.');
+        //return true;
+    });
+
     // Extra säkerhet: visa spinner även om formuläret skickas på annat sätt
     $('#filterForm').on('submit', function () {
         $('#loadingOverlay').addClass('active');

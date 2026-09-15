@@ -104,7 +104,7 @@
 <div class="compare-columns">
 
     <div class="compare-column">
-        <h2>Period A</h2>
+        <h2>Period A{{ $periodAValue ? ' - ' . $periodAValue : '' }}</h2>
         @if ($summaryA)
             <table class="summary-table">
                 <tr><th>Antal nedsättningar</th><td>{{ $summaryA['total_count'] }}</td></tr>
@@ -149,7 +149,7 @@
     </div>
 
     <div class="compare-column">
-        <h2>Period B</h2>
+        <h2>Period B{{ $periodBValue ? ' - ' . $periodBValue : '' }}</h2>
         @if ($summaryB)
             <table class="summary-table">
                 <tr><th>Antal nedsättningar</th><td>{{ $summaryB['total_count'] }}</td></tr>

@@ -101,8 +101,8 @@
                 @php
                     // Dina nya önskade kolumner
                     $columns = [
-                        'product_name' => 'Produktnamn',
-                        'category' => 'Kategori',
+                        'product_name' => 'Produkt-ID',
+                        'group_key' => 'Kategori',
                         'quantity' => 'Antal',
                         'purchase_price' => 'Total kronor inköp',
                         'reduced_price' => 'Total kronor nedsatt',

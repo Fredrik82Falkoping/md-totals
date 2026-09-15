@@ -19,7 +19,7 @@ class MarkdownImportService
     {
         $lastSync = $tenant->last_synced_at ?? Carbon::createFromTimestamp(0);
 
-        Log::info('Import startar (strömmande)', [
+        Log::info('Import startar', [
             'tenant' => $tenant->name,
             'last_synced_at' => $lastSync->toDateTimeString(),
         ]);
@@ -104,7 +104,7 @@ class MarkdownImportService
             }
         }
 
-        // Sista, ofullständiga batchen
+        // Last incomplte batch
         if (!empty($rows)) {
             $totalInserted += Markdown::insertOrIgnore($rows);
         }

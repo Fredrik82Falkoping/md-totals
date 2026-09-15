@@ -422,7 +422,7 @@ class MarkdownController extends Controller
     {
         return Markdown::query()
             ->pluck('scanned_at')
-            ->map(fn ($date) => (new \DateTime($date))->format('o-\WW')) // t.ex. "2026-W12"
+            ->map(fn ($date) => (new \DateTime($date))->format('o-\vW')) // t.ex. "2026-W12"
             ->unique()
             ->sort()
             ->values()

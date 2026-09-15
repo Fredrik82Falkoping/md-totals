@@ -16,7 +16,7 @@ class ImportMarkdownsFromApi extends Command
         $tenantEndpointArg = $this->argument('tenant_endpoint');
         $storeCodeArg = $this->argument('store_code');
 
-        // Om båda argumenten anges: kör bara den specifika tenanten (som innan, bra för manuell testning)
+        // If both arguments are provided: only import for the specific tenant (as before, good for manual testing)
         if ($tenantEndpointArg && $storeCodeArg) {
             $tenant = Tenant::firstOrCreate(
                 ['store_code' => $storeCodeArg],
@@ -27,7 +27,7 @@ class ImportMarkdownsFromApi extends Command
             return;
         }
 
-        // Annars: loopa över ALLA tenants som har ett api_endpoint konfigurerat
+        // Otherwise: loop over ALL tenants that have an api_endpoint configured
         $tenants = Tenant::whereNotNull('api_endpoint')->get();
 
         if ($tenants->isEmpty()) {
@@ -53,7 +53,7 @@ class ImportMarkdownsFromApi extends Command
             $this->info("  Klart. {$count} nya rader.");
         } catch (\Throwable $e) {
             $this->error("  Misslyckades: {$e->getMessage()}");
-            // Fortsätter till nästa tenant, en trasig tenant stoppar inte hela körningen
+            // Continues to the next tenant, a broken tenant does not stop the entire execution
         }
     }
 }

@@ -24,70 +24,75 @@
     </div>
 
     <form method="GET" action="{{ route('statistics.index') }}" id="filterForm" class="filters">
-        
-        <div class="filter-group">
-            <label for="group_key">Kategori</label>
-            <select name="group_key[]" id="group_key" multiple>
-                <option value="">Alla kategorier</option>
-                @foreach ($groupKeys as $groupKey)
-                    <option value="{{ $groupKey }}" @selected(in_array($groupKey, request()->input('group_key', [])))>
-                        {{ $groupKey }}
-                    </option>
-                @endforeach
-            </select>
-        </div>
     
-        <div class="filter-group">
-            <label for="week">Veckor</label>
-            <select name="week[]" id="week" multiple>
-                <option value="">Alla veckor</option>
-                @foreach ($weeks as $week)
-                    <option value="{{ $week }}" @selected(in_array($week, request()->input('week', [])))>
-                        {{ $week }}
-                    </option>
-                @endforeach
-            </select>
+        <div class="filter-row">
+            <div class="filter-group">
+                <label for="week">Veckor</label>
+                <select name="week[]" id="week" multiple>
+                    <option value="">Alla veckor</option>
+                    @foreach ($weeks as $week)
+                        <option value="{{ $week }}" @selected(in_array($week, request()->input('week', [])))>
+                            {{ $week }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="month">Månader</label>
+                <select name="month[]" id="month" multiple>
+                    <option value="">Alla månader</option>
+                    @foreach ($months as $month)
+                        <option value="{{ $month }}" @selected(in_array($month, request()->input('month', [])))>
+                            {{ $month }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="year">År</label>
+                <select name="year[]" id="year" multiple>
+                    <option value="">Alla år</option>
+                    @foreach ($years as $year)
+                        <option value="{{ $year }}"  @selected(in_array($year, request()->input('year', [])))>
+                            {{ $year }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
         </div>
 
-        <div class="filter-group">
-            <label for="month">Månader</label>
-            <select name="month[]" id="month" multiple>
-                <option value="">Alla månader</option>
-                @foreach ($months as $month)
-                    <option value="{{ $month }}" @selected(in_array($month, request()->input('month', [])))>
-                        {{ $month }}
-                    </option>
-                @endforeach
-            </select>
-        </div>
+        <div class="filter-row">
 
-        <div class="filter-group">
-            <label for="year">År</label>
-            <select name="year[]" id="year" multiple>
-                <option value="">Alla år</option>
-                @foreach ($years as $year)
-                    <option value="{{ $year }}"  @selected(in_array($year, request()->input('year', [])))>
-                        {{ $year }}
-                    </option>
-                @endforeach
-            </select>
-        </div>
+            <div class="filter-group">
+                <label for="group_key">Kategori</label>
+                <select name="group_key[]" id="group_key" multiple>
+                    <option value="">Alla kategorier</option>
+                    @foreach ($groupKeys as $groupKey)
+                        <option value="{{ $groupKey }}" @selected(in_array($groupKey, request()->input('group_key', [])))>
+                            {{ $groupKey }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
 
-        <div class="filter-group">
-            <label for="discount_percent">Rabatt %</label>
-            <select name="discount_percent[]" id="discount_percent" multiple>
-                @foreach ($discountPercents as $percent)
-                    <option value="{{ $percent }}" @selected(in_array($percent, $currentDiscountPercents))>
-                        {{ number_format($percent) }}%
-                    </option>
-                @endforeach
-            </select>
-        </div>
+            <div class="filter-group">
+                <label for="discount_percent">Rabatt %</label>
+                <select name="discount_percent[]" id="discount_percent" multiple>
+                    @foreach ($discountPercents as $percent)
+                        <option value="{{ $percent }}" @selected(in_array($percent, $currentDiscountPercents))>
+                            {{ number_format($percent) }}%
+                        </option>
+                    @endforeach
+                </select>
+            </div>
 
-        <button type="submit" class="filter-button">Filtrera</button>
+            <button type="submit" class="filter-button">Filtrera</button>
 
-        <input type="hidden" name="sort" value="{{ $currentSort }}">
-        <input type="hidden" name="direction" value="{{ $currentDirection }}">
+            <input type="hidden" name="sort" value="{{ $currentSort }}">
+            <input type="hidden" name="direction" value="{{ $currentDirection }}">
+        </div> 
     </form>
 
     <div id="loadingOverlay" class="loading-overlay">

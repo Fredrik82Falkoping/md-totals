@@ -53,6 +53,57 @@ class AuthenticationTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_admin_can_edit_store_name_and_password(): void
+    {
+        $tenant = Tenant::create(['name' => 'Butik A', 'store_code' => 'A']);
+        $user = User::factory()->create([
+            'tenant_id' => $tenant->id,
+            'password' => Hash::make('old-password'),
+        ]);
+        $admin = User::factory()->create(['is_admin' => true, 'tenant_id' => null]);
+
+        $response = $this->actingAs($admin)->put(route('tenants.update', $tenant), [
+            'name' => 'Butik B',
+            'password' => 'new-password',
+            'password_confirmation' => 'new-password',
+        ]);
+
+        $response->assertRedirect(route('tenants.select'));
+        $this->assertSame('Butik B', $tenant->fresh()->name);
+        $this->assertTrue(Hash::check('new-password', $user->fresh()->password));
+    }
+
+    public function test_blank_password_only_updates_store_name(): void
+    {
+        $tenant = Tenant::create(['name' => 'Butik A', 'store_code' => 'A']);
+        $oldPassword = Hash::make('old-password');
+        $user = User::factory()->create([
+            'tenant_id' => $tenant->id,
+            'password' => $oldPassword,
+        ]);
+        $admin = User::factory()->create(['is_admin' => true, 'tenant_id' => null]);
+
+        $this->actingAs($admin)->put(route('tenants.update', $tenant), [
+            'name' => 'Butik B',
+            'password' => '',
+            'password_confirmation' => '',
+        ])->assertRedirect(route('tenants.select'));
+
+        $this->assertSame('Butik B', $tenant->fresh()->name);
+        $this->assertSame($oldPassword, $user->fresh()->password);
+    }
+
+    public function test_regular_user_cannot_edit_a_store(): void
+    {
+        $tenant = Tenant::create(['name' => 'Butik A', 'store_code' => 'A']);
+        $user = User::factory()->create(['tenant_id' => $tenant->id]);
+
+        $this->actingAs($user)->get(route('tenants.edit', $tenant))->assertForbidden();
+        $this->actingAs($user)->put(route('tenants.update', $tenant), [
+            'name' => 'Butik B',
+        ])->assertForbidden();
+    }
+
     public function test_user_can_log_out(): void
     {
         $tenant = Tenant::create(['name' => 'Butik A', 'store_code' => 'A']);

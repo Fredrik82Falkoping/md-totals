@@ -16,6 +16,8 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/', [TenantController::class, 'index'])->name('tenants.select');
     Route::post('/select-tenant', [TenantController::class, 'store'])->name('tenants.store');
+    Route::get('/tenants/{tenant}/edit', [TenantController::class, 'edit'])->name('tenants.edit');
+    Route::put('/tenants/{tenant}', [TenantController::class, 'update'])->name('tenants.update');
 
     Route::get('/statistics', [MarkdownController::class, 'index'])->name('statistics.index');
     Route::get('/statistics/compare', [MarkdownController::class, 'compare'])->name('statistics.compare');

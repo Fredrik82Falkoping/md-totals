@@ -16,4 +16,9 @@ class Tenant extends Model
     {
         return $this->hasMany(Markdown::class);
     }
+
+    public function users()
+    {
+        return $this->hasMany(User::class);
+    }
 }

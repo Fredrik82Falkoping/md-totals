@@ -23,6 +23,7 @@
                 <a href="{{ route('statistics.compare') }}">Jämför perioder</a>
                 @if (auth()->user()->is_admin)
                     <a href="{{ route('tenants.select') }}">Byt butik</a>
+                    <a href="{{ route('tenants.edit', session('tenant_id')) }}">Redigera butik</a>
                 @endif
                 <form method="POST" action="{{ route('logout') }}" class="logout-form">
                     @csrf

@@ -78,6 +78,7 @@ class MarkdownController extends Controller
         ];
 
         $discountPercents = Markdown::whereNotNull('discount_percent')
+            ->selectRaw('ROUND(discount_percent, 0) AS discount_percent')
             ->distinct()
             ->orderBy('discount_percent')
             ->pluck('discount_percent');
@@ -227,7 +228,12 @@ class MarkdownController extends Controller
         }
 
         if ($request->filled('discount_percent')) {
-            $query->whereIn('discount_percent', $request->input('discount_percent'));
+            $query->whereRaw(
+                'ROUND(discount_percent, 0) IN (' .
+                implode(',', array_fill(0, count($request->input('discount_percent')), '?')) .
+                ')',
+                $request->input('discount_percent')
+            );
         }
 
         if (!empty($allDateRanges)) {

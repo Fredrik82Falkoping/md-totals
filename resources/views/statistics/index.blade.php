@@ -78,7 +78,7 @@
             <select name="discount_percent[]" id="discount_percent" multiple>
                 @foreach ($discountPercents as $percent)
                     <option value="{{ $percent }}" @selected(in_array($percent, $currentDiscountPercents))>
-                        {{ number_format($percent, 0) }}%
+                        {{ number_format($percent) }}%
                     </option>
                 @endforeach
             </select>

@@ -6,61 +6,6 @@ table { border-collapse: collapse; width: 100%; }
 th, td { border: 1px solid #ddd; padding: 0.5rem; text-align: left; font-size: 0.9rem; }
 th { background: #f0f0f0; }
 
-.filters {
-    display: flex;
-    gap: 1.5rem;
-    align-items: align-center;
-    margin-bottom: 1.5rem;
-    flex-wrap: wrap;
-}
-
-.filters label {
-    display: block;
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: #555;
-    margin-bottom: 0.3rem;
-}
-
-.filters select {
-    padding: 0.5rem 0.75rem;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    background: white;
-    font-size: 0.9rem;
-    min-width: 160px;
-    cursor: pointer;
-}
-
-.filters select:hover {
-    border-color: #999;
-}
-
-.filters select:focus {
-    outline: none;
-    border-color: #4a90d9;
-    box-shadow: 0 0 0 2px rgba(74, 144, 217, 0.15);
-}
-
-.filter-group {
-    display: flex;
-    flex-direction: column;
-}
-
-.filter-group {
-    margin: 20px;
-    font-family: sans-serif;
-    max-width: 400px;
-}
-.filter-group label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: bold;
-}
-/* Säkerställer att Select2-boxen tar upp hela bredden av sin container */
-.select2-container {
-    width: 100% !important;
-}
 .select2-search__field {min-width: 3rem;}
 /** Loading overlay styles */
 .loading-overlay {
@@ -98,20 +43,6 @@ th { background: #f0f0f0; }
     color: #333;
 }
 
-/** Filter button styles */
-.filter-button {
-    padding: 0.55rem 1.5rem;
-    background: #4a90d9;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 0.9rem;
-    font-weight: 600;
-    cursor: pointer;
-    align-self: flex-end;
-    transition: background 0.15s ease;
-    margin-bottom: 1.2rem;
-}
 
 .filter-button:hover {
     background: #3a7bc0;

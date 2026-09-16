@@ -1,14 +1,25 @@
 .filters {
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.filter-row {
     display: flex;
     gap: 1.5rem;
     align-items: center;
-    margin-bottom: 1.5rem;
     flex-wrap: wrap;
 }
 
 .filter-group {
     display: flex;
     flex-direction: column;
+    margin: 0.5rem;
+    font-family: sans-serif;
+    max-width: 400px;
+}
+
+.filter-group .select2.select2-container {
+    min-width: 10rem;
 }
 
 .filter-group label {
@@ -59,7 +70,7 @@
     cursor: pointer;
     align-self: flex-end;
     transition: background 0.15s ease;
-    margin-bottom: 1.2rem;
+    margin-bottom: 0.5rem;
 }
 
 .filter-button:hover {

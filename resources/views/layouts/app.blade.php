@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <title>MD Totals</title>
-    <link rel="stylesheet" href="{{ asset('css/statistics.css') }}">
-    <meta charset="UTF-8">
-    <title>MD Totals</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('css/base.css') }}">
     <link rel="stylesheet" href="{{ asset('css/navigation.css') }}">
     <link rel="stylesheet" href="{{ asset('css/filters.css') }}">
@@ -16,23 +16,36 @@
     <link rel="stylesheet" href="{{ asset('css/loading.css') }}">
 </head>
 <body>
-    <div class="container">
+    <nav class="main-nav">
+        <a class="brand-link" href="https://www.eswinne.se" aria-label="Företagets hemsida">
+            <img src="{{ asset('img/logo-duo.svg') }}" alt="Duo">
+        </a>
         @if (auth()->check() && session()->has('tenant_id'))
-            <nav class="main-nav">
+            <div class="main-nav-links">
                 <a href="{{ route('statistics.index') }}">Statistik</a>
                 <a href="{{ route('statistics.compare') }}">Jämför perioder</a>
                 @if (auth()->user()->is_admin)
                     <a href="{{ route('tenants.select') }}">Byt butik</a>
                     <a href="{{ route('tenants.edit', session('tenant_id')) }}">Redigera butik</a>
                 @endif
-                <form method="POST" action="{{ route('logout') }}" class="logout-form">
-                    @csrf
-                    <button type="submit">Logga ut</button>
-                </form>
-            </nav>
+            </div>
+            <form method="POST" action="{{ route('logout') }}" class="logout-form">
+                @csrf
+                <button type="submit">Logga ut</button>
+            </form>
         @endif
+    </nav>
+    <div class="container">
         @yield('content')
     </div>
+
+    <footer class="site-footer">
+        <div class="site-footer-inner">
+            <a href="mailto:petra.vulevity@eswinne.se">petra.vulevity@eswinne.se</a>
+            <span>© eSwinne</span>
+            <a href="tel:+46739349595">+46 73 934 95 95</a>
+        </div>
+    </footer>
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <!-- Select2 from cdnjs.cloudflare.com -->

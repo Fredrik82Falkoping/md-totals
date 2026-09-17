@@ -1,6 +1,6 @@
 .sort-link {
     text-decoration: none;
-    color: #333;
+    color: var(--secondary-text-color);
 }
 
 .sort-link.active-asc::after {
@@ -17,5 +17,6 @@
 }
 
 .product-row:hover {
-    background: #f0f6fc;
+    background: var(--banner-color);
+    color: var(--secondary-text-color);
 }

@@ -14,7 +14,6 @@
     display: flex;
     flex-direction: column;
     margin: 0.5rem;
-    font-family: sans-serif;
     max-width: 400px;
 }
 
@@ -26,28 +25,28 @@
     display: block;
     font-size: 0.8rem;
     font-weight: 600;
-    color: #555;
+    color: var(--text-color);
     margin-bottom: 0.3rem;
 }
 
 .filters select {
     padding: 0.5rem 0.75rem;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    background: white;
+    border: 1px solid var(--text-color);
+    background: var(--banner-color);
+    color: var(--secondary-text-color);
     font-size: 0.9rem;
     min-width: 160px;
     cursor: pointer;
 }
 
 .filters select:hover {
-    border-color: #999;
+    border-color: var(--secondary-text-color);
 }
 
 .filters select:focus {
     outline: none;
-    border-color: #4a90d9;
-    box-shadow: 0 0 0 2px rgba(74, 144, 217, 0.15);
+    border-color: var(--text-color);
+    box-shadow: 0 0 0 2px rgba(10, 10, 10, 0.2);
 }
 
 /* Säkerställer att Select2-boxen tar upp hela bredden av sin container */
@@ -59,14 +58,20 @@
     min-width: 3rem;
 }
 
+.select2-results__option,
+.select2-selection__choice {
+    color: var(--secondary-text-color);
+    background: var(--banner-color);
+}
+
 .filter-button {
     padding: 0.55rem 1.5rem;
-    background: #4a90d9;
-    color: white;
+    background: var(--banner-color);
+    color: #2b5d2f;
     border: none;
-    border-radius: 6px;
-    font-size: 0.9rem;
-    font-weight: 600;
+    border-radius: 46px;
+    font-size: 15px;
+    font-weight: 600 ;
     cursor: pointer;
     align-self: flex-end;
     transition: background 0.15s ease;
@@ -74,14 +79,17 @@
 }
 
 .filter-button:hover {
-    background: #3a7bc0;
+    background: var(--secondary-text-color);
+    color: var(--banner-color);
+    border: 1px solid var(--secondary-text-color);
 }
 
 .filter-button:active {
-    background: #2f6aa8;
+    background: var(--secondary-text-color);
+    color: var(--banner-color);
 }
 
 .filter-button:focus {
     outline: none;
-    box-shadow: 0 0 0 2px rgba(74, 144, 217, 0.3);
+    box-shadow: 0 0 0 2px rgba(10, 10, 10, 0.3);
 }

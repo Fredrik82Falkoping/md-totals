@@ -159,7 +159,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7" style="text-align: center;">Inga produkter matchade sökningen.</td>
+                    <td colspan="8" style="text-align: center;">Inga produkter matchade sökningen.</td>
                 </tr>
             @endforelse
         </tbody>

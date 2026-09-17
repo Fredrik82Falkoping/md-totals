@@ -5,7 +5,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(255, 255, 255, 0.7);
+    background: rgba(243, 241, 196, 0.85);
     z-index: 9999;
     align-items: center;
     justify-content: center;
@@ -18,8 +18,8 @@
 .spinner {
     width: 48px;
     height: 48px;
-    border: 5px solid #ddd;
-    border-top-color: #4a90d9;
+    border: 5px solid var(--banner-color);
+    border-top-color: var(--text-color);
     border-radius: 50%;
     animation: spin 0.7s linear infinite;
 }

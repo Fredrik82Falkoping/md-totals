@@ -71,7 +71,7 @@
                     <option value="">Alla kategorier</option>
                     @foreach ($groupKeys as $groupKey)
                         <option value="{{ $groupKey }}" @selected(in_array($groupKey, request()->input('group_key', [])))>
-                            {{ $groupKey }}
+                            {{ $categoryMap[$groupKey] ?? "Kategori #{$groupKey}" }}
                         </option>
                     @endforeach
                 </select>
@@ -138,7 +138,7 @@
                     <!-- Produktnamn (eller ID om namn saknas) -->
                     <td>{{ $markdown->product_name ?? $markdown->product_id }}</td>
                     <!-- Gruppnyckel (kategori) -->
-                    <td>{{ $markdown->group_key }}</td>
+                    <td>{{ $markdown->category ?? ($categoryMap[$markdown->group_key] ?? '—') }}</td>
                     <!-- Antal (Visar stycken. Om din app använder vikt, kan du lägga till logik för weight_kg här) -->
                     <td>{{ number_format($markdown->total_scans, 0, ',', ' ') }} st</td>
                     

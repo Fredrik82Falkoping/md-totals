@@ -95,6 +95,7 @@ class MarkdownController extends Controller
             'summary' => $summary,
             'markdowns' => $query->limit(100)->get(),
             //'categories' => $categories,
+            'categoryMap' => $this->categoryMapFor(session('tenant_id')),
             'groupKeys' => $groupKeys,
             'weeks' => $weeks,
             'months' => $months,
@@ -195,6 +196,7 @@ class MarkdownController extends Controller
             'allGroupKeys' => Markdown::whereNotNull('group_key')->distinct()->orderBy('group_key')->pluck('group_key'),
             'currentCategories' => $categories,
             'currentGroupKeys' => $groupKeys,
+            'categoryMap' => $this->categoryMapFor(session('tenant_id')),
             'summaryA' => $summaryA,
             'summaryB' => $summaryB,
             'markdownsA' => $markdownsA,
@@ -433,5 +435,16 @@ class MarkdownController extends Controller
             ->sort()
             ->values()
             ->toArray();
+    }
+
+    private function categoryMapFor(int $tenantId): array
+    {
+        $tenantSpecific = \App\Models\Category::where('tenant_id', $tenantId)
+            ->pluck('name', 'group_key')
+            ->toArray();
+
+        // Tenant-specifik data har alltid företräde. Default-mappningen fyller
+        // bara i de group_key som INTE finns registrerade för just denna tenant.
+        return $tenantSpecific + config('markdown_categories.defaults');
     }
 }

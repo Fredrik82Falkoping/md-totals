@@ -73,6 +73,55 @@ class AuthenticationTest extends TestCase
         $this->assertTrue(Hash::check('new-password', $user->fresh()->password));
     }
 
+    public function test_admin_can_create_a_store_user_when_store_has_none(): void
+    {
+        $tenant = Tenant::create(['name' => 'Butik A', 'store_code' => 'A']);
+        $admin = User::factory()->create(['is_admin' => true, 'tenant_id' => null]);
+
+        $response = $this->actingAs($admin)->put(route('tenants.update', $tenant), [
+            'name' => 'Butik B',
+            'username' => 'butik-b',
+            'password' => 'new-password',
+            'password_confirmation' => 'new-password',
+        ]);
+
+        $response->assertRedirect(route('tenants.select'));
+        $user = User::where('tenant_id', $tenant->id)->first();
+        $this->assertNotNull($user);
+        $this->assertSame('butik-b', $user->username);
+        $this->assertTrue(Hash::check('new-password', $user->password));
+    }
+
+    public function test_admin_can_see_when_store_has_no_user(): void
+    {
+        $tenant = Tenant::create(['name' => 'Butik A', 'store_code' => 'A']);
+        $admin = User::factory()->create(['is_admin' => true, 'tenant_id' => null]);
+
+        $this->actingAs($admin)
+            ->get(route('tenants.edit', $tenant))
+            ->assertOk()
+            ->assertSee('Användarnamn')
+            ->assertDontSee('Det finns redan en användare för butiken.');
+    }
+
+    public function test_admin_can_see_the_existing_store_user(): void
+    {
+        $tenant = Tenant::create(['name' => 'Butik A', 'store_code' => 'A']);
+        $user = User::factory()->create([
+            'name' => 'Butik A',
+            'username' => 'butik-a',
+            'tenant_id' => $tenant->id,
+        ]);
+        $admin = User::factory()->create(['is_admin' => true, 'tenant_id' => null]);
+
+        $this->actingAs($admin)
+            ->get(route('tenants.edit', $tenant))
+            ->assertOk()
+            ->assertSee('butik-a')
+            ->assertSee('Det finns redan en användare för butiken.')
+            ->assertDontSee('name="username"');
+    }
+
     public function test_blank_password_only_updates_store_name(): void
     {
         $tenant = Tenant::create(['name' => 'Butik A', 'store_code' => 'A']);

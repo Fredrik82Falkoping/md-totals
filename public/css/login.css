@@ -89,3 +89,9 @@
     padding: 0.7rem;
     font-size: 1rem;
 }
+
+.login-form .filter-group p{
+    color: var(--secondary-text-color);
+    font-size: 0.85rem;
+    margin: 0 0 0.5rem;
+}

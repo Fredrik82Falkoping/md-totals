@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Log as ImportLog;
 use App\Models\Markdown;
 use App\Models\Tenant;
 use App\Enums\WriteOffReason;
@@ -16,6 +17,23 @@ class MarkdownImportService
     ) {}
 
     public function importForTenant(Tenant $tenant, string $tenantEndpoint): int
+    {
+        $startedAt = now();
+
+        try {
+            $importedCount = $this->performImportForTenant($tenant, $tenantEndpoint);
+
+            $this->writeImportLog($tenant, $startedAt, $importedCount, 'success');
+
+            return $importedCount;
+        } catch (\Throwable $e) {
+            $this->writeImportLog($tenant, $startedAt, 0, 'failed', $e->getMessage());
+
+            throw $e;
+        }
+    }
+
+    private function performImportForTenant(Tenant $tenant, string $tenantEndpoint): int
     {
         $lastSync = $tenant->last_synced_at ?? Carbon::createFromTimestamp(0);
 
@@ -122,5 +140,28 @@ class MarkdownImportService
         }
 
         return $totalInserted;
+    }
+
+    private function writeImportLog(
+        Tenant $tenant,
+        Carbon $startedAt,
+        int $importedCount,
+        string $status,
+        ?string $error = null,
+    ): void {
+        try {
+            ImportLog::create([
+                'tenant_id' => $tenant->id,
+                'imported_count' => $importedCount,
+                'status' => $status,
+                'error' => $error,
+                'started_at' => $startedAt,
+            ]);
+        } catch (\Throwable $logException) {
+            Log::error('Importlogg kunde inte sparas', [
+                'tenant_id' => $tenant->id,
+                'error' => $logException->getMessage(),
+            ]);
+        }
     }
 }

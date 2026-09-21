@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ImportLogController;
 use App\Http\Controllers\MarkdownController;
 use App\Http\Controllers\TenantController;
 
@@ -18,6 +19,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/select-tenant', [TenantController::class, 'store'])->name('tenants.store');
     Route::get('/tenants/{tenant}/edit', [TenantController::class, 'edit'])->name('tenants.edit');
     Route::put('/tenants/{tenant}', [TenantController::class, 'update'])->name('tenants.update');
+    Route::get('/import-logs', [ImportLogController::class, 'index'])->name('import-logs.index');
 
     Route::get('/statistics', [MarkdownController::class, 'index'])->name('statistics.index');
     Route::get('/statistics/compare', [MarkdownController::class, 'compare'])->name('statistics.compare');

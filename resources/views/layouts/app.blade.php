@@ -14,19 +14,25 @@
     <link rel="stylesheet" href="{{ asset('css/compare.css') }}">
     <link rel="stylesheet" href="{{ asset('css/login.css') }}">
     <link rel="stylesheet" href="{{ asset('css/loading.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/import-logs.css') }}">
 </head>
 <body>
     <nav class="main-nav">
         <a class="brand-link" href="https://www.eswinne.se" aria-label="Företagets hemsida">
             <img src="{{ asset('img/logo-duo.svg') }}" alt="Duo">
         </a>
-        @if (auth()->check() && session()->has('tenant_id'))
+        @if (auth()->check())
             <div class="main-nav-links">
+                @if (session()->has('tenant_id'))
                 <a href="{{ route('statistics.index') }}">Statistik</a>
                 <a href="{{ route('statistics.compare') }}">Jämför perioder</a>
+                @endif
                 @if (auth()->user()->is_admin)
                     <a href="{{ route('tenants.select') }}">Byt butik</a>
-                    <a href="{{ route('tenants.edit', session('tenant_id')) }}">Redigera butik</a>
+                    <a href="{{ route('import-logs.index') }}">API-importer</a>
+                    @if (session()->has('tenant_id'))
+                        <a href="{{ route('tenants.edit', session('tenant_id')) }}">Redigera butik</a>
+                    @endif
                 @endif
             </div>
             <form method="POST" action="{{ route('logout') }}" class="logout-form">

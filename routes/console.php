@@ -2,6 +2,7 @@
 
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schedule;
 
 Artisan::command('inspire', function () {
@@ -12,4 +13,6 @@ Artisan::command('inspire', function () {
 Schedule::command('md:import-api')
     ->dailyAt('03:37') 
     ->withoutOverlapping() // Förhindrar att en ny startas om den förra ännu inte är klar
+    ->onSuccess(fn () => Log::info('Jobbet lyckades'))
+    ->onFailure(fn () => Log::error('Jobbet misslyckades'))
     ->emailOutputOnFailure(env('MAIL_ADMIN_ADDRESS')); 

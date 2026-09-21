@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\MarkdownImportService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Mockery;
 use Tests\TestCase;
 
@@ -122,5 +123,43 @@ class ImportLogTest extends TestCase
             ->post(route('import-logs.import-all'))
             ->assertRedirect(route('import-logs.index'))
             ->assertSessionHas('error', 'Importen för alla 2 tenants är klar. 1 lyckades, 1 misslyckades.');
+    }
+
+    public function test_admin_can_import_a_new_tenant_and_uses_endpoint_as_default_name(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true, 'tenant_id' => null]);
+        Http::fake(['*' => Http::response([], 200)]);
+
+        $this->actingAs($admin)
+            ->post(route('import-logs.import-new-tenant'), [
+                'tenant_endpoint' => 'Ica01838SM_Alingsås',
+                'store_code' => 'NEW001',
+            ])
+            ->assertRedirect(route('import-logs.index'))
+            ->assertSessionHas('status', 'Kunden Ica01838SM_Alingsås importerades. 0 nya rader.');
+
+        $this->assertDatabaseHas('tenants', [
+            'name' => 'Ica01838SM_Alingsås',
+            'store_code' => 'NEW001',
+            'api_endpoint' => 'Ica01838SM_Alingsås',
+        ]);
+    }
+
+    public function test_invalid_new_tenant_endpoint_does_not_create_tenant(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true, 'tenant_id' => null]);
+        Http::fake(['*' => Http::response([], 404)]);
+
+        $this->actingAs($admin)
+            ->from(route('import-logs.index'))
+            ->post(route('import-logs.import-new-tenant'), [
+                'tenant_endpoint' => 'misspelled-customer',
+                'store_code' => 'BAD001',
+                'name' => 'Ska inte sparas',
+            ])
+            ->assertRedirect(route('import-logs.index'))
+            ->assertSessionHas('error', "Ingen kund hittades med API-endpointen 'misspelled-customer'.");
+
+        $this->assertDatabaseMissing('tenants', ['store_code' => 'BAD001']);
     }
 }

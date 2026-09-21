@@ -13,6 +13,9 @@
     @if (session('error'))
         <div class="import-log-message import-log-message-error">{{ session('error') }}</div>
     @endif
+    <div id="import-loading-message" class="import-log-message import-log-message-loading" hidden aria-live="polite">
+        API-anropet körs. Data hämtas, vänta tills importen är klar.
+    </div>
 
     <section class="import-log-actions" aria-labelledby="import-actions-title">
         <div>
@@ -20,7 +23,7 @@
             <p>Starta en ny import från API:et för en butik eller alla butiker.</p>
         </div>
         <div class="import-log-action-forms">
-            <form method="POST" action="{{ route('import-logs.import-tenant') }}">
+            <form method="POST" action="{{ route('import-logs.import-tenant') }}" class="import-request-form">
                 @csrf
                 <label for="import-tenant-id">
                     Butik
@@ -34,11 +37,35 @@
                 <button type="submit">Hämta vald butik</button>
             </form>
 
-            <form method="POST" action="{{ route('import-logs.import-all') }}">
+            <form method="POST" action="{{ route('import-logs.import-all') }}" class="import-request-form">
                 @csrf
                 <button type="submit">Hämta alla butiker</button>
             </form>
         </div>
+    </section>
+
+    <section class="import-log-new-tenant" aria-labelledby="new-tenant-title">
+        <h2 id="new-tenant-title">Importera ny kund</h2>
+        <p>Verifiera API-endpointen innan kunden sparas.</p>
+        <form method="POST" action="{{ route('import-logs.import-new-tenant') }}" class="import-log-new-tenant-form import-request-form">
+            @csrf
+            <label for="tenant-endpoint">
+                API-endpoint
+                <input type="text" id="tenant-endpoint" name="tenant_endpoint" value="{{ old('tenant_endpoint') }}" required maxlength="255">
+            </label>
+            <label for="store-code">
+                Butikskod
+                <input type="text" id="store-code" name="store_code" value="{{ old('store_code') }}" required maxlength="255">
+            </label>
+            <label for="tenant-name">
+                Kundnamn
+                <input type="text" id="tenant-name" name="name" value="{{ old('name') }}" maxlength="255">
+            </label>
+            <button type="submit">Importera ny kund</button>
+        </form>
+        @error('tenant_endpoint') <div class="import-log-field-error">{{ $message }}</div> @enderror
+        @error('store_code') <div class="import-log-field-error">{{ $message }}</div> @enderror
+        @error('name') <div class="import-log-field-error">{{ $message }}</div> @enderror
     </section>
 
     <form method="GET" action="{{ route('import-logs.index') }}" class="import-log-filters">

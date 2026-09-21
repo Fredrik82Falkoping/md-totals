@@ -8,23 +8,30 @@ use Illuminate\Console\Command;
 
 class ImportMarkdownsFromApi extends Command
 {
-    protected $signature = 'md:import-api {tenant_endpoint?} {store_code?}';
+    protected $signature = 'md:import-api {tenant_endpoint?} {store_code?} {name?}';
     protected $description = 'Hämtar och importerar nedsättningsdata från MD Totals API för en eller alla tenants';
 
-    public function handle(MarkdownImportService $importService): void
+    public function handle(MarkdownImportService $importService): int
     {
         $tenantEndpointArg = $this->argument('tenant_endpoint');
         $storeCodeArg = $this->argument('store_code');
+        $nameArg = $this->argument('name');
 
-        // If both arguments are provided: only import for the specific tenant (as before, good for manual testing)
-        if ($tenantEndpointArg && $storeCodeArg) {
-            $tenant = Tenant::firstOrCreate(
-                ['store_code' => $storeCodeArg],
-                ['name' => $storeCodeArg, 'api_endpoint' => $tenantEndpointArg]
-            );
+        if ($tenantEndpointArg || $storeCodeArg || $nameArg) {
+            if (!$tenantEndpointArg || !$storeCodeArg) {
+                $this->error('För en tenant-import krävs både tenant_endpoint och store_code.');
+                return self::FAILURE;
+            }
 
-            $this->importTenant($tenant, $importService);
-            return;
+            try {
+                $result = $importService->importNewTenant($tenantEndpointArg, $storeCodeArg, $nameArg);
+                $this->info("Kund '{$result['tenant']->name}' importerad. {$result['count']} nya rader.");
+            } catch (\Throwable $e) {
+                $this->error($e->getMessage());
+                return self::FAILURE;
+            }
+
+            return self::SUCCESS;
         }
 
         // Otherwise: loop over ALL tenants that have an api_endpoint configured
@@ -32,7 +39,7 @@ class ImportMarkdownsFromApi extends Command
 
         if ($tenants->isEmpty()) {
             $this->warn('Inga tenants med konfigurerat api_endpoint hittades.');
-            return;
+            return self::SUCCESS;
         }
 
         $this->info("Startar import för {$tenants->count()} tenants...");
@@ -42,6 +49,8 @@ class ImportMarkdownsFromApi extends Command
         }
 
         $this->info('Alla tenants klara.');
+
+        return self::SUCCESS;
     }
 
     private function importTenant(Tenant $tenant, MarkdownImportService $importService): void

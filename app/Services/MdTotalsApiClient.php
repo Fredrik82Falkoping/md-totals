@@ -24,7 +24,7 @@ class MdTotalsApiClient
     public function streamItemsLaterThan(string $tenantEndpoint, Carbon $after): iterable
     {
         $formattedAfter = $after->format('Y.m.d H:i:s.u');
-        $url = "{$this->baseUrl}/{$tenantEndpoint}/MdTotals/ReadItemsLaterThan";
+        $url = "{$this->baseUrl}/" . rawurlencode($tenantEndpoint) . "/MdTotals/ReadItemsLaterThan";
 
         Log::info('MdTotals API: ', [
             'url' => $url,
@@ -35,7 +35,7 @@ class MdTotalsApiClient
             'verify' => false,
             'stream' => true, // viktigt: hämta som ström, inte hela body direkt
         ])
-            ->timeout(120)
+            ->timeout(300)
             ->get($url, ['after' => $formattedAfter]);
 
         if (!$response->successful()) {
@@ -56,6 +56,27 @@ class MdTotalsApiClient
 
         foreach ($items as $item) {
             yield $item;
+        }
+    }
+
+    public function assertEndpointExists(string $tenantEndpoint): void
+    {
+        $url = "{$this->baseUrl}/" . rawurlencode($tenantEndpoint) . "/MdTotals/ReadItemsLaterThan";
+
+        try {
+            $response = Http::withOptions(['verify' => false])
+                ->timeout(300)
+                ->get($url, ['after' => Carbon::createFromTimestamp(0)->format('Y.m.d H:i:s.u')]);
+        } catch (\Throwable $e) {
+            throw new \RuntimeException("API-endpointen '{$tenantEndpoint}' kunde inte verifieras.", 0, $e);
+        }
+
+        if ($response->status() === 404) {
+            throw new \RuntimeException("Ingen kund hittades med API-endpointen '{$tenantEndpoint}'.");
+        }
+
+        if (!$response->successful()) {
+            throw new \RuntimeException("API-endpointen '{$tenantEndpoint}' kunde inte verifieras (HTTP {$response->status()}).");
         }
     }
 }

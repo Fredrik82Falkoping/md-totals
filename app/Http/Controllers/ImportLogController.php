@@ -7,6 +7,7 @@ use App\Models\Tenant;
 use App\Services\MarkdownImportService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class ImportLogController extends Controller
 {
@@ -47,9 +48,35 @@ class ImportLogController extends Controller
         ]);
     }
 
+    public function importNewTenant(Request $request, MarkdownImportService $importService)
+    {
+        abort_unless(auth()->user()->is_admin, 403);
+        set_time_limit(300);
+
+        $validated = $request->validate([
+            'tenant_endpoint' => ['required', 'string', 'max:255', 'regex:/^[\p{L}\p{N}._-]+$/u', Rule::unique('tenants', 'api_endpoint')],
+            'store_code' => ['required', 'string', 'max:255', Rule::unique('tenants', 'store_code')],
+            'name' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        try {
+            $result = $importService->importNewTenant(
+                $validated['tenant_endpoint'],
+                $validated['store_code'],
+                $validated['name'] ?? null,
+            );
+
+            return redirect()->route('import-logs.index')
+                ->with('status', "Kunden {$result['tenant']->name} importerades. {$result['count']} nya rader.");
+        } catch (\Throwable $e) {
+            return back()->withInput()->with('error', $e->getMessage());
+        }
+    }
+
     public function importTenant(Request $request, MarkdownImportService $importService)
     {
         abort_unless(auth()->user()->is_admin, 403);
+        set_time_limit(300);
 
         $validated = $request->validate([
             'tenant_id' => ['required', 'exists:tenants,id'],
@@ -70,6 +97,7 @@ class ImportLogController extends Controller
     public function importAll(MarkdownImportService $importService)
     {
         abort_unless(auth()->user()->is_admin, 403);
+        set_time_limit(300);
 
         $tenants = Tenant::whereNotNull('api_endpoint')->orderBy('name')->get();
         $successful = 0;

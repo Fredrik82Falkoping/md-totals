@@ -1,4 +1,10 @@
 $(document).ready(function () {
+    $('.import-request-form').on('submit', function () {
+        $('.import-log-message:not(#import-loading-message), .import-log-field-error').remove();
+        $('#import-loading-message').prop('hidden', false);
+        $(this).find('button[type="submit"]').prop('disabled', true);
+    });
+
     $('.filter-button').on('change', function () {
         $('#loadingOverlay').addClass('active');
         $('#filterForm').submit();
@@ -54,7 +60,7 @@ $(document).ready(function () {
                 $('#modalTitle').text(data.name ? `${data.name} (${data.product_id})` : data.product_id);
 
                 const rows = data.events.map(event => `
-                    <tr>
+                    <tr class="product-row">
                         <td>${event.scanned_at}</td>
                         <td>${event.regular_price} kr</td>
                         <td>${event.reduced_price} kr</td>

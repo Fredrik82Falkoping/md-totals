@@ -20,6 +20,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/tenants/{tenant}/edit', [TenantController::class, 'edit'])->name('tenants.edit');
     Route::put('/tenants/{tenant}', [TenantController::class, 'update'])->name('tenants.update');
     Route::get('/import-logs', [ImportLogController::class, 'index'])->name('import-logs.index');
+    Route::post('/import-logs/new-tenant', [ImportLogController::class, 'importNewTenant'])->name('import-logs.import-new-tenant');
     Route::post('/import-logs/tenant', [ImportLogController::class, 'importTenant'])->name('import-logs.import-tenant');
     Route::post('/import-logs/all', [ImportLogController::class, 'importAll'])->name('import-logs.import-all');
 

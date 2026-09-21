@@ -33,6 +33,22 @@ class MarkdownImportService
         }
     }
 
+    public function importNewTenant(string $tenantEndpoint, string $storeCode, ?string $name = null): array
+    {
+        $this->apiClient->assertEndpointExists($tenantEndpoint);
+
+        $tenant = Tenant::create([
+            'name' => $name ?: $tenantEndpoint,
+            'store_code' => $storeCode,
+            'api_endpoint' => $tenantEndpoint,
+        ]);
+
+        return [
+            'tenant' => $tenant,
+            'count' => $this->importForTenant($tenant, $tenantEndpoint),
+        ];
+    }
+
     private function performImportForTenant(Tenant $tenant, string $tenantEndpoint): int
     {
         $lastSync = $tenant->last_synced_at ?? Carbon::createFromTimestamp(0);

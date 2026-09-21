@@ -6,6 +6,80 @@
     margin-bottom: 0.35rem;
 }
 
+.import-log-actions {
+    align-items: end;
+    background: var(--banner-color);
+    border: 1px solid var(--secondary-text-color);
+    display: flex;
+    gap: 1.5rem;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+}
+
+.import-log-actions h2 {
+    margin: 0 0 0.35rem;
+    color: var(--secondary-text-color);
+}
+
+.import-log-actions p {
+    margin: 0;
+    color: var(--secondary-text-color);
+}
+
+.import-log-action-forms {
+    align-items: end;
+    display: flex;
+    gap: 0.75rem;
+}
+
+.import-log-action-forms form {
+    align-items: end;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.import-log-action-forms label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    font-weight: 600;
+}
+
+.import-log-action-forms select,
+.import-log-action-forms button {
+    background: #ffffff;
+    border: 1px solid var(--secondary-text-color);
+    border-radius: 4px;
+    min-height: 2.3rem;
+    padding: 0.4rem 0.55rem;
+}
+
+.import-log-action-forms button {
+    background: var(--footer-color);
+    color: #ffffff;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.import-log-message {
+    border: 1px solid;
+    margin-bottom: 1rem;
+    padding: 0.75rem 1rem;
+}
+
+.import-log-message-success {
+    background: #e8f5e9;
+    border-color: #7ab681;
+    color: #1d5b25;
+}
+
+.import-log-message-error {
+    background: #fdecea;
+    border-color: #d98278;
+    color: #9b2119;
+}
+
 .import-log-filters {
     background: var(--banner-color);
     border: 1px solid var(--secondary-text-color);
@@ -63,13 +137,20 @@
   background-color: #e8f5e9; /* En mycket ljus, nästan vit grön ton */
   color: #1d5b25;             /* Behåll din mörka textfärg */
   border-radius: 20px;        /* Rundade kanter */
-  font-weight: 700;
+  font-weight: 800;
   font-size: 0.85rem;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1); /* Liten skugga för djup */
   text-align: center;
 }
 
 @media (max-width: 760px) {
+    .import-log-actions,
+    .import-log-action-forms,
+    .import-log-action-forms form {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
     .import-log-filters {
         grid-template-columns: 1fr;
     }

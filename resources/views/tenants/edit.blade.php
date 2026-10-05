@@ -33,13 +33,13 @@
                 <div class="filter-group">
                     <p>Butiken har ingen användare än. Skapa en ny användare för butiken.</p>
                     <label for="username">Användarnamn</label>
-                    <input type="text" name="username" id="username" value="{{ old('username') }}" required>
+                    <input type="text" name="username" id="username" value="{{ old('username') }}">
                 </div>
             @endif
 
             <div class="filter-group">
                 <label for="password">{{ $user ? 'Nytt lösenord' : 'Lösenord' }}</label>
-                <input type="password" name="password" id="password" minlength="4" {{ $user ? '' : 'required' }}>
+                <input type="password" name="password" id="password" minlength="4">
                 @if ($user)
                     <small>Lämna tomt för att behålla nuvarande lösenord.</small>
                 @endif

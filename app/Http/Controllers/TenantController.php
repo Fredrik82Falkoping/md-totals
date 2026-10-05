@@ -50,8 +50,8 @@ class TenantController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'username' => [$user ? 'nullable' : 'required', 'string', 'max:255', 'unique:users,username'],
-            'password' => [$user ? 'nullable' : 'required', 'string', 'min:4', 'confirmed'],
+            'username' => ['nullable', 'required_with:password', 'string', 'max:255', 'unique:users,username'],
+            'password' => ['nullable', 'required_with:username', 'string', 'min:4', 'confirmed'],
         ]);
 
         $tenant->update(['name' => $validated['name']]);
@@ -60,7 +60,7 @@ class TenantController extends Controller
             if (!empty($validated['password'])) {
                 $user->update(['password' => Hash::make($validated['password'])]);
             }
-        } else {
+        } elseif (!empty($validated['username']) && !empty($validated['password'])) {
             User::create([
                 'name' => $validated['username'],
                 'username' => $validated['username'],

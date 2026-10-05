@@ -51,15 +51,18 @@
             @csrf
             <label for="tenant-endpoint">
                 API-endpoint
-                <input type="text" id="tenant-endpoint" name="tenant_endpoint" value="{{ old('tenant_endpoint') }}" required maxlength="255">
+                <input type="text" id="tenant-endpoint" name="tenant_endpoint" value="{{ old('tenant_endpoint') }}" required maxlength="255" aria-describedby="tenant-endpoint-help">
+                <span id="tenant-endpoint-help">Format: butikstyp + butikskod + typ, t.ex. ICA12345SM. Supermarket skrivs SM och kvantum KV.</span>
             </label>
             <label for="store-code">
                 Butikskod
-                <input type="text" id="store-code" name="store_code" value="{{ old('store_code') }}" required maxlength="255">
+                <input type="text" id="store-code" name="store_code" value="{{ old('store_code') }}" required maxlength="255" aria-describedby="store-code-help">
+                <span id="store-code-help">Ange butikens unika kod separat, inte hela API-endpointen (t.ex. 12345).</span>
             </label>
             <label for="tenant-name">
                 Kundnamn
-                <input type="text" id="tenant-name" name="name" value="{{ old('name') }}" maxlength="255">
+                <input type="text" id="tenant-name" name="name" value="{{ old('name') }}" maxlength="255" aria-describedby="tenant-name-help">
+                <span id="tenant-name-help">Namnet som visas i statistiken, t.ex. Coop Forum Ankeborg.</span>
             </label>
             <button type="submit">Importera ny kund</button>
         </form>
@@ -97,7 +100,7 @@
             </thead>
             <tbody>
                 @forelse ($logs as $log)
-                    <tr>
+                    <tr class="import-log-row">
                         <td>{{ $log->tenant->name }}</td>
                         <td>{{ $log->started_at->format('Y-m-d H:i:s') }}</td>
                         <td>{{ number_format($log->imported_count, 0, ',', ' ') }}</td>

@@ -53,7 +53,7 @@
         </div>
     </footer>
 
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="{{ asset('js/jquery-3.7.1.min.js') }}"></script>
     <!-- Select2 local -->
     <link href="{{ asset('css/select2.min.css') }}" rel="stylesheet" />
     <script src="{{ asset('js/select2.min.js') }}"></script>

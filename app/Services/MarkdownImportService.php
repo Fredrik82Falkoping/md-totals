@@ -14,6 +14,7 @@ class MarkdownImportService
 {
     public function __construct(
         private MdTotalsApiClient $apiClient,
+        private ProductImportService $productImportService,
     ) {}
 
     public function importForTenant(Tenant $tenant, string $tenantEndpoint): int
@@ -22,6 +23,7 @@ class MarkdownImportService
 
         try {
             $importedCount = $this->performImportForTenant($tenant, $tenantEndpoint);
+            $this->productImportService->importForTenant($tenant, $tenantEndpoint);
 
             $this->writeImportLog($tenant, $startedAt, $importedCount, 'success');
 

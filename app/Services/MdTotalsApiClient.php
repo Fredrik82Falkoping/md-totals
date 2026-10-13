@@ -59,6 +59,40 @@ class MdTotalsApiClient
         }
     }
 
+    /**
+     * Stream ArticleStrings returned by the tenant API.
+     */
+    public function streamArticleStrings(string $tenantEndpoint): iterable
+    {
+        $url = "{$this->baseUrl}/" . rawurlencode($tenantEndpoint) . "/ArticleStrings/ReadItems";
+
+        Log::info('MdTotals ArticleStrings API:', ['url' => $url]);
+
+        $response = Http::withOptions([
+            'verify' => false,
+            'stream' => true,
+        ])
+            ->timeout(300)
+            ->get($url);
+
+        if (!$response->successful()) {
+            Log::error('MdTotals ArticleStrings API: anrop misslyckades', [
+                'status' => $response->status(),
+            ]);
+            throw new \RuntimeException("ArticleStrings API-anrop misslyckades: HTTP {$response->status()}");
+        }
+
+        $stream = $response->toPsrResponse()->getBody();
+        $items = Items::fromStream(
+            StreamWrapper::getResource($stream),
+            ['decoder' => new \JsonMachine\JsonDecoder\ExtJsonDecoder(true)]
+        );
+
+        foreach ($items as $item) {
+            yield $item;
+        }
+    }
+
     public function assertEndpointExists(string $tenantEndpoint): void
     {
         $url = "{$this->baseUrl}/" . rawurlencode($tenantEndpoint) . "/MdTotals/ReadItemsLaterThan";

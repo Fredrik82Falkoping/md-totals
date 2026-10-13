@@ -35,10 +35,14 @@ class MarkdownController extends Controller
         $baseQuery = clone $query; // Används för summeringen, innan vi groupBy:ar för produktlistan
 
         // Produktgrupperad lista (en rad per produkt, med summerade/genomsnittliga värden)
-        $query->selectRaw('
-            product_id,
-            MAX(name) as product_name, -- Namnet är detsamma per ID, MAX fungerar bra för att plocka ut det
-            MAX(group_key) as group_key,
+        $sql = $query->leftJoin('products', function ($join) {
+        $join->on('markdowns.product_id', '=', 'products.product_id')
+             ->on('products.tenant_id', '=', 'markdowns.tenant_id');
+        })
+        ->selectRaw('
+            markdowns.product_id,
+            MAX(products.name) as product_name,
+            MAX(markdowns.group_key) as group_key,
             COUNT(*) as total_scans,
             SUM(quantity) as total_quantity,
             SUM(purchase_price) as total_purchase_price,
@@ -46,7 +50,7 @@ class MarkdownController extends Controller
             SUM(margin_amount) as total_margin_amount,
             AVG(discount_percent) as avg_discount_percent,
             AVG(margin_percent) as avg_margin_percent
-        ')->groupBy('product_id');
+        ')->groupBy('markdowns.product_id');
 
         $currentSort = $request->input('sort', 'product_name');
         $currentDirection = $request->input('direction', 'asc');

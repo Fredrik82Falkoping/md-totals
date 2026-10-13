@@ -28,7 +28,7 @@ class Markdown extends Model
     {
         static::addGlobalScope('tenant', function (Builder $builder) {
             if (session()->has('tenant_id')) {
-                $builder->where('tenant_id', session('tenant_id'));
+                $builder->where('markdowns.tenant_id', session('tenant_id'));
             }
         });
     }

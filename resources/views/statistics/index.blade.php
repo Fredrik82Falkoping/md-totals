@@ -106,7 +106,7 @@
                 @php
                     // Dina nya önskade kolumner
                     $columns = [
-                        'product_name' => 'Produkt-ID',
+                        'product_name' => 'Produktnamn',
                         'group_key' => 'Kategori',
                         'quantity' => 'Antal',
                         'purchase_price' => 'Total kronor inköp',
@@ -136,7 +136,9 @@
             @forelse ($markdowns as $markdown)
                 <tr class="product-row" data-product-id="{{ $markdown->product_id }}">
                     <!-- Produktnamn (eller ID om namn saknas) -->
-                    <td>{{ $markdown->product_name ?? $markdown->product_id }}</td>
+                    <td title="{{ $markdown->product_id }}">
+                        {{ $markdown->product_name ?? $markdown->product_id }}
+                    </td>
                     <!-- Gruppnyckel (kategori) -->
                     <td>{{ $markdown->category ?? ($categoryMap[$markdown->group_key] ?? '—') }}</td>
                     <!-- Antal (Visar stycken. Om din app använder vikt, kan du lägga till logik för weight_kg här) -->

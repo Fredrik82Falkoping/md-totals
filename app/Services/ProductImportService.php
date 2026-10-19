@@ -3,7 +3,9 @@
 namespace App\Services;
 
 use App\Models\Product;
+use App\Models\Log as ImportLog;
 use App\Models\Tenant;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
 class ProductImportService
@@ -13,6 +15,22 @@ class ProductImportService
     ) {}
 
     public function importForTenant(Tenant $tenant, string $tenantEndpoint): int
+    {
+        $startedAt = now();
+
+        try {
+            $upserted = $this->performImportForTenant($tenant, $tenantEndpoint);
+            $this->writeImportLog($tenant, $startedAt, $upserted, 'success');
+
+            return $upserted;
+        } catch (\Throwable $e) {
+            $this->writeImportLog($tenant, $startedAt, 0, 'failed', $e->getMessage());
+
+            throw $e;
+        }
+    }
+
+    private function performImportForTenant(Tenant $tenant, string $tenantEndpoint): int
     {
         $rows = [];
         $now = now();
@@ -77,6 +95,31 @@ class ProductImportService
         ]);
 
         return $upserted;
+    }
+
+    private function writeImportLog(
+        Tenant $tenant,
+        Carbon $startedAt,
+        int $importedCount,
+        string $status,
+        ?string $error = null,
+    ): void {
+        try {
+            ImportLog::create([
+                'tenant_id' => $tenant->id,
+                'import_type' => 'product',
+                'imported_count' => $importedCount,
+                'status' => $status,
+                'error' => $error,
+                'started_at' => $startedAt,
+            ]);
+        } catch (\Throwable $logException) {
+            Log::error('Importlogg kunde inte sparas', [
+                'tenant_id' => $tenant->id,
+                'import_type' => 'product',
+                'error' => $logException->getMessage(),
+            ]);
+        }
     }
 
     private function upsert(array $rows): int

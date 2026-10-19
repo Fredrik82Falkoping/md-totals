@@ -23,16 +23,16 @@ class MarkdownImportService
 
         try {
             $importedCount = $this->performImportForTenant($tenant, $tenantEndpoint);
-            $this->productImportService->importForTenant($tenant, $tenantEndpoint);
-
             $this->writeImportLog($tenant, $startedAt, $importedCount, 'success');
-
-            return $importedCount;
         } catch (\Throwable $e) {
             $this->writeImportLog($tenant, $startedAt, 0, 'failed', $e->getMessage());
 
             throw $e;
         }
+
+        $this->productImportService->importForTenant($tenant, $tenantEndpoint);
+
+        return $importedCount;
     }
 
     public function importNewTenant(string $tenantEndpoint, string $storeCode, ?string $name = null): array
@@ -170,6 +170,7 @@ class MarkdownImportService
         try {
             ImportLog::create([
                 'tenant_id' => $tenant->id,
+                'import_type' => 'markdown',
                 'imported_count' => $importedCount,
                 'status' => $status,
                 'error' => $error,

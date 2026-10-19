@@ -24,8 +24,8 @@ class ProductImportTest extends TestCase
             'api_endpoint' => 'tenant-a',
         ]);
         Product::create([
-            'store_key' => 'STORE-A',
-            'article_key' => 123,
+            'tenant_id' => $tenant->id,
+            'product_id' => 123,
             'group_key' => 1,
             'name' => 'Gammalt namn',
         ]);
@@ -40,10 +40,16 @@ class ProductImportTest extends TestCase
         $this->assertSame(1, $count);
         $this->assertDatabaseCount('products', 1);
         $this->assertDatabaseHas('products', [
-            'store_key' => 'STORE-A',
-            'article_key' => 123,
+            'tenant_id' => $tenant->id,
+            'product_id' => 123,
             'group_key' => 42,
             'name' => 'Nytt namn',
+        ]);
+        $this->assertDatabaseHas('import_logs', [
+            'tenant_id' => $tenant->id,
+            'import_type' => 'product',
+            'imported_count' => 1,
+            'status' => 'success',
         ]);
     }
 
@@ -66,10 +72,20 @@ class ProductImportTest extends TestCase
 
         $this->assertSame(0, $count);
         $this->assertDatabaseHas('products', [
-            'store_key' => 'STORE-A',
-            'article_key' => 456,
+            'tenant_id' => $tenant->id,
+            'product_id' => 456,
             'group_key' => 43,
             'name' => 'Artikel',
+        ]);
+        $this->assertDatabaseHas('import_logs', [
+            'tenant_id' => $tenant->id,
+            'import_type' => 'markdown',
+            'status' => 'success',
+        ]);
+        $this->assertDatabaseHas('import_logs', [
+            'tenant_id' => $tenant->id,
+            'import_type' => 'product',
+            'status' => 'success',
         ]);
     }
 
@@ -86,6 +102,33 @@ class ProductImportTest extends TestCase
         $this->assertCount(1, $items);
         Http::assertSent(fn ($request) => $request->method() === 'GET'
             && str_ends_with($request->url(), '/tenant-a/ArticleStrings/ReadItems'));
+    }
+
+    public function test_markdown_and_product_imports_are_logged_as_separate_types(): void
+    {
+        $tenant = Tenant::create([
+            'name' => 'Kund A',
+            'store_code' => 'STORE-A',
+            'api_endpoint' => 'tenant-a',
+        ]);
+        $apiClient = Mockery::mock(MdTotalsApiClient::class);
+        $apiClient->shouldReceive('streamItemsLaterThan')->once()->andReturn([]);
+        $apiClient->shouldReceive('streamArticleStrings')->once()->with('tenant-a')->andReturn([]);
+
+        (new MarkdownImportService($apiClient, new ProductImportService($apiClient)))
+            ->importForTenant($tenant, 'tenant-a');
+
+        $this->assertDatabaseHas('import_logs', [
+            'tenant_id' => $tenant->id,
+            'import_type' => 'markdown',
+            'status' => 'success',
+        ]);
+        $this->assertDatabaseHas('import_logs', [
+            'tenant_id' => $tenant->id,
+            'import_type' => 'product',
+            'status' => 'success',
+        ]);
+        $this->assertDatabaseCount('import_logs', 2);
     }
 
     public function test_products_can_be_imported_without_running_the_markdown_import(): void
@@ -109,7 +152,7 @@ class ProductImportTest extends TestCase
     private function serializedArticle(int $articleKey, int $groupKey, string $name): string
     {
         $fields = array_fill(0, 37, '');
-        $fields[2] = (string) $articleKey;
+        $fields[3] = (string) $articleKey;
         $fields[5] = (string) $groupKey;
         $fields[36] = $name;
 

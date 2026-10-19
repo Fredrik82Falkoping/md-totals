@@ -10,6 +10,7 @@ class Log extends Model
 
     protected $fillable = [
         'tenant_id',
+        'import_type',
         'imported_count',
         'status',
         'error',

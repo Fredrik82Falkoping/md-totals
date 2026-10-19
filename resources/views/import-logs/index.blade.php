@@ -92,6 +92,7 @@
             <thead>
                 <tr>
                     <th>Kund</th>
+                    <th>Typ</th>
                     <th>Tidpunkt</th>
                     <th>Importerade poster</th>
                     <th>Status</th>
@@ -102,6 +103,7 @@
                 @forelse ($logs as $log)
                     <tr class="import-log-row">
                         <td>{{ $log->tenant->name }}</td>
+                        <td>{{ $log->import_type === 'product' ? 'Produkter' : 'Markdowns' }}</td>
                         <td>{{ $log->started_at->format('Y-m-d H:i:s') }}</td>
                         <td>{{ number_format($log->imported_count, 0, ',', ' ') }}</td>
                         <td class="status-{{ $log->status }}">
@@ -115,7 +117,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="5">Inga importer matchar sökningen.</td>
+                        <td colspan="6">Inga importer matchar sökningen.</td>
                     </tr>
                 @endforelse
             </tbody>

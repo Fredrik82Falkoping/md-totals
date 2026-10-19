@@ -171,6 +171,39 @@
         </tbody>
     </table>
 
+    @if ($markdowns->hasPages())
+        <nav class="statistics-pagination" aria-label="Sidnavigering">
+            <p class="pagination-summary">
+                Visar {{ $markdowns->firstItem() }}–{{ $markdowns->lastItem() }} av {{ $markdowns->total() }} produkter
+            </p>
+            <div class="pagination-controls">
+                @if ($markdowns->onFirstPage())
+                    <span class="pagination-button disabled" aria-disabled="true">Föregående</span>
+                @else
+                    <a class="pagination-button" href="{{ $markdowns->previousPageUrl() }}" rel="prev">Föregående</a>
+                @endif
+
+                @php
+                    $startPage = max(1, $markdowns->currentPage() - 2);
+                    $endPage = min($markdowns->lastPage(), $markdowns->currentPage() + 2);
+                @endphp
+                @foreach (range($startPage, $endPage) as $page)
+                    @if ($page === $markdowns->currentPage())
+                        <span class="pagination-button active" aria-current="page">{{ $page }}</span>
+                    @else
+                        <a class="pagination-button" href="{{ $markdowns->url($page) }}">{{ $page }}</a>
+                    @endif
+                @endforeach
+
+                @if ($markdowns->hasMorePages())
+                    <a class="pagination-button" href="{{ $markdowns->nextPageUrl() }}" rel="next">Nästa</a>
+                @else
+                    <span class="pagination-button disabled" aria-disabled="true">Nästa</span>
+                @endif
+            </div>
+        </nav>
+    @endif
+
     <div id="productModal" class="modal-overlay">
         <div class="modal-box">
             <button id="closeModal" class="modal-close">&times;</button>

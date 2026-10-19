@@ -298,7 +298,7 @@ class MarkdownController extends Controller
     private function weekToDateRange(string $isoWeek): array
     {
         // $isoWeek format: "2023-W08"
-        [$year, $week] = sscanf($isoWeek, '%d-W%d');
+        [$year, $week] = sscanf($isoWeek, '%d-v%d');
 
         $start = Carbon::create()->setISODate($year, $week)->startOfWeek();
         $end = (clone $start)->endOfWeek();

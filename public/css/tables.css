@@ -25,6 +25,9 @@
     background: var(--background-color);
 }
 
+.product-row td:nth-child(n+4) {
+    text-align: right;
+}
 
 .product-row:hover {
     background: var(--banner-color);

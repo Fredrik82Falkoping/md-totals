@@ -106,14 +106,15 @@
                 @php
                     // Dina nya önskade kolumner
                     $columns = [
-                        'product_name' => 'Produktnamn',
+                        'product_id' => 'Produkt-ID',
                         'group_key' => 'Kategori',
                         'quantity' => 'Antal',
-                        'purchase_price' => 'Total kronor inköp',
-                        'reduced_price' => 'Total kronor nedsatt',
+                        'product_name' => 'Produktnamn',
+                        'purchase_price' => 'Totalt inköp',
+                        'reduced_price' => 'Totalt nedsatt',
                         'margin_amount' => 'Total förtjänst',
-                        'discount_percent' => 'Nedsatt i %',
-                        'margin_percent' => 'Medelmarginal i %',
+                        'discount_percent' => 'Nedsatt',
+                        'margin_percent' => 'Medelmarginal',
                     ];
                 @endphp
                 @foreach ($columns as $key => $label)
@@ -137,12 +138,15 @@
                 <tr class="product-row" data-product-id="{{ $markdown->product_id }}">
                     <!-- Produktnamn (eller ID om namn saknas) -->
                     <td title="{{ $markdown->product_id }}">
-                        {{ $markdown->product_name ?? $markdown->product_id }}
+                        {{ $markdown->product_id }}
                     </td>
                     <!-- Gruppnyckel (kategori) -->
                     <td>{{ $markdown->category ?? ($categoryMap[$markdown->group_key] ?? '—') }}</td>
                     <!-- Antal (Visar stycken. Om din app använder vikt, kan du lägga till logik för weight_kg här) -->
                     <td>{{ number_format($markdown->total_scans, 0, ',', ' ') }} st</td>
+
+                    <!-- Produktnamn -->
+                    <td>{{ $markdown->product_name ?? '—' }}</td>
                     
                     <!-- Total kronor inköp -->
                     <td>{{ number_format($markdown->total_purchase_price, 2, ',', ' ') }} kr</td>

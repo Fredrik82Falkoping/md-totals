@@ -56,6 +56,7 @@ class MarkdownController extends Controller
         $currentDirection = $request->input('direction', 'asc');
 
         $sortMapping = [
+            'product_id' => 'product_id',
             'product_name' => 'product_name',
             'group_key' => 'group_key',
             'quantity' => 'total_scans',

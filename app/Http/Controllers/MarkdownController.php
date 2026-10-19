@@ -72,6 +72,9 @@ class MarkdownController extends Controller
         }
 
         $currentDirection = $currentDirection === 'desc' ? 'desc' : 'asc';
+        if ($currentSort === 'product_name') {
+            $query->orderByRaw('product_name IS NULL ASC');
+        }
         $query->orderBy($sortMapping[$currentSort], $currentDirection);
 
         // Summering över HELA urvalet (inte bara de rader som visas), räknat i databasen
@@ -98,7 +101,7 @@ class MarkdownController extends Controller
             'tenant' => $tenant,
             'tenant_name' => $tenant->name,
             'summary' => $summary,
-            'markdowns' => $query->limit(100)->get(),
+            'markdowns' => $query->paginate(50)->withQueryString(),
             //'categories' => $categories,
             'categoryMap' => $this->categoryMapFor(session('tenant_id')),
             'groupKeys' => $groupKeys,

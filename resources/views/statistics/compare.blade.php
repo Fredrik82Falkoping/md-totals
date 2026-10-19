@@ -121,8 +121,7 @@
                         <th>Produkt-ID</th>
                         <th>Kategori</th>
                         <th>Datum</th>
-                        <th>Ord. pris</th>
-                        <th>Nedsatt pris</th>
+                        <th>Ord. pris</th>                        
                         <th>Rabatt</th>
                         <th>Rabatt %</th>
                     </tr>
@@ -134,7 +133,6 @@
                             <td>{{ $m->group_key ?? '—' }}</td>
                             <td>{{ $m->scanned_at }}</td>
                             <td>{{ number_format($m->regular_price, 2) }} kr</td>
-                            <td>{{ number_format($m->reduced_price, 2) }} kr</td>
                             <td>{{ number_format($m->discount_amount, 2) }} kr</td>
                             <td>{{ number_format($m->discount_percent, 1) }}%</td>
                         </tr>
@@ -166,8 +164,7 @@
                         <th>Produkt-ID</th>
                         <th>Kategori</th>
                         <th>Datum</th>
-                        <th>Ord. pris</th>
-                        <th>Nedsatt pris</th>
+                        <th>Ord. pris</th>                       
                         <th>Rabatt</th>
                         <th>Rabatt %</th>
                     </tr>
@@ -178,8 +175,7 @@
                             <td>{{ $m->product_id }}</td>
                             <td>{{ $m->group_key ?? '—' }}</td>
                             <td>{{ $m->scanned_at }}</td>
-                            <td>{{ number_format($m->regular_price, 2) }} kr</td>
-                            <td>{{ number_format($m->reduced_price, 2) }} kr</td>
+                            <td>{{ number_format($m->regular_price, 2) }} kr</td>                           
                             <td>{{ number_format($m->discount_amount, 2) }} kr</td>
                             <td>{{ number_format($m->discount_percent, 1) }}%</td>
                         </tr>
